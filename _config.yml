@@ -7,7 +7,7 @@ first_name: Samarth
 middle_name:
 last_name: P
 contact_note: >
-  Feel free to reach out via email or connect on LinkedIn!
+  Feel free to reach out via email or on LinkedIn!
 description: > # the ">" symbol means to ignore newlines until "footer_text:"
   AI Researcher and Developer specializing in Machine Learning, Quantum Computing, and Multilingual AI systems.
 footer_text: >
