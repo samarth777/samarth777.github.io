@@ -1,14 +1,14 @@
 github_users:
-  - torvalds
-  - alshedivat
+  - samarth777
 
 repo_description_lines_max: 2
 
 github_repos:
-  - alshedivat/al-folio
-  - jekyll/jekyll
-  - twbs/bootstrap
-  - jquery/jquery
-  - FortAwesome/Font-Awesome
-  - mathjax/MathJax
-  - jpswalsh/academicons
+  - samarth777/manimator
+  - samarth777/synthdoc
+  - samarth777/hypercluster
+  - samarth777/kissandial
+  - samarth777/smartguardian
+  - samarth777/emostream
+  - samarth777/parichaya
+  - samarth777/nayana
