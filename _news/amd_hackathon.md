@@ -6,4 +6,3 @@ related_posts: false
 ---
 
 Won the **AMD Pervasive AI Hackathon** in the Robotics AI Category and received an **AMD Kria KR260 FPGA**!
-

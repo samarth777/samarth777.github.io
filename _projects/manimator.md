@@ -39,4 +39,3 @@ Manimator is an innovative AI-powered tool that transforms research papers and m
 Manimator democratizes access to complex mathematical and scientific concepts by making them visually accessible. The tool has been embraced by the research community for creating educational content and presentation materials.
 
 [View on GitHub](https://github.com/samarth777) | [Try on Hugging Face](https://huggingface.co)
-

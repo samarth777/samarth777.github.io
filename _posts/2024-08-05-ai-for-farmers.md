@@ -12,12 +12,14 @@ related_posts: false
 ## The Digital Divide
 
 India has over 140 million farmers. Many live in rural areas with:
+
 - Limited smartphone access
 - Poor internet connectivity
 - Low digital literacy
 - Language barriers (prefer local languages over English)
 
 Yet, farmers need timely information about:
+
 - Government subsidies and schemes
 - Weather forecasts for crop planning
 - Market prices for their produce
@@ -41,23 +43,27 @@ Yet, farmers need timely information about:
 ### What It Provides
 
 **Government Subsidies**
+
 - Information about available schemes
 - Eligibility criteria
 - Application processes
 - Required documents
 
 **Weather Updates**
+
 - Localized weather forecasts
 - Rainfall predictions
 - Advisory for sowing/harvesting
 - Extreme weather alerts
 
 **Market Information**
+
 - Current crop prices in nearby mandis
 - Best time to sell produce
 - Demand trends
 
 **Agricultural Knowledge**
+
 - Crop selection advice
 - Pest management
 - Fertilizer recommendations
@@ -68,16 +74,19 @@ Yet, farmers need timely information about:
 ### Voice Infrastructure
 
 **Twilio Integration**
+
 - Handles incoming calls
 - Manages call routing
 - Provides call recording for quality
 
 **Speech-to-Text (STT)**
+
 - Converts farmer's voice to text
 - Supports multiple Indian languages
 - Handles rural accents and dialects
 
 **Text-to-Speech (TTS)**
+
 - Natural-sounding voice responses
 - Regional language support
 - Adjustable speaking rate for clarity
@@ -85,17 +94,20 @@ Yet, farmers need timely information about:
 ### AI Agent System
 
 **LlamaIndex Framework**
+
 - Orchestrates the AI agent workflow
 - Manages conversation context
 - Routes queries to appropriate knowledge sources
 
 **Knowledge Base**
+
 - Government scheme documents
 - Agricultural extension material
 - Weather API integration
 - Market price databases
 
 **Vector Search (Milvus)**
+
 - Fast retrieval of relevant information
 - Semantic search for natural queries
 - Handles variations in how questions are asked
@@ -103,6 +115,7 @@ Yet, farmers need timely information about:
 ### Backend
 
 **FastAPI Server**
+
 - RESTful API for call handling
 - WebSocket for real-time updates
 - Admin dashboard for monitoring
@@ -114,6 +127,7 @@ Yet, farmers need timely information about:
 India has 22 official languages and hundreds of dialects.
 
 **Solution**:
+
 - Multilingual STT/TTS models
 - Language detection
 - Fallback to English when needed
@@ -124,6 +138,7 @@ India has 22 official languages and hundreds of dialects.
 Many farmers can't read, so purely text-based solutions don't work.
 
 **Solution**:
+
 - Voice-only interface
 - Simple, conversational flow
 - No need to navigate menus
@@ -134,6 +149,7 @@ Many farmers can't read, so purely text-based solutions don't work.
 Rural areas often have poor phone connectivity with dropped calls.
 
 **Solution**:
+
 - Save conversation state
 - Resume from where we left off
 - Compress audio for low bandwidth
@@ -142,12 +158,14 @@ Rural areas often have poor phone connectivity with dropped calls.
 ### Challenge 4: Context and Personalization
 
 Different farmers have different needs based on:
+
 - Location (soil, climate)
 - Crops grown
 - Farm size
 - Resources available
 
 **Solution**:
+
 - Location-aware responses
 - Remember farmer preferences
 - Contextual follow-ups
@@ -177,6 +195,7 @@ Different farmers have different needs based on:
 ### 1. Design for Constraints
 
 Rural India taught me to build for:
+
 - Low bandwidth
 - Limited device capabilities
 - Intermittent connectivity
@@ -187,6 +206,7 @@ These constraints drive innovation.
 ### 2. Context is Everything
 
 Generic AI assistants don't work. We needed:
+
 - Domain-specific knowledge (agriculture)
 - Regional context (local crops, climate)
 - Cultural sensitivity (communication style)
@@ -198,6 +218,7 @@ For many rural users, voice is not just convenient - it's the **only** accessibl
 ### 4. Trust Takes Time
 
 Farmers need to trust the system. We build trust through:
+
 - Accurate information
 - Consistent availability
 - Respectful communication
@@ -208,21 +229,25 @@ Farmers need to trust the system. We build trust through:
 ### Expanding Capabilities
 
 **Pest Identification**
+
 - Farmer describes pest/disease
 - AI identifies the issue
 - Provides treatment recommendations
 
 **Soil Testing Integration**
+
 - Connect with soil testing labs
 - Provide results via phone
 - Customized fertilizer advice
 
 **Credit and Insurance**
+
 - Information about agricultural loans
 - Crop insurance schemes
 - Eligibility and application support
 
 **Community Features**
+
 - Connect farmers with agricultural experts
 - Share best practices
 - Group calls for training
@@ -239,14 +264,17 @@ Farmers need to trust the system. We build trust through:
 KissanDial demonstrates how AI can be adapted for:
 
 **Low-Tech Environments**
+
 - Not everyone has smartphones or internet
 - AI should be accessible via existing infrastructure
 
 **Social Impact**
+
 - Technology should serve those who need it most
 - Commercial viability isn't the only measure of success
 
 **Inclusive Design**
+
 - Consider literacy, language, and cultural context
 - One size doesn't fit all
 
@@ -265,4 +293,3 @@ KissanDial is our small contribution to bridging that gap. One phone call at a t
 **Partners**: Working with agricultural extension services and farmer cooperatives
 
 If you're interested in AI for social good or building inclusive technology, let's connect! 🌾📞
-

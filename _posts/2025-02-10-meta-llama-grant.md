@@ -38,6 +38,7 @@ Nayana is a comprehensive framework for adapting Vision-Language Models (VLMs) t
 ### The Nayana Synthetic Dataset
 
 We created the **largest multilingual document image dataset** with:
+
 - **2M+ document images**
 - **22+ languages** (including Hindi, Tamil, Telugu, Kannada, Bengali, and more)
 - Support for **OCR, VQA, and layout analysis**
@@ -57,6 +58,7 @@ To generate this massive dataset, we built **SynthDoc**, a synthetic document ge
 ### Research Publications
 
 Our work has been accepted at multiple top-tier venues:
+
 - **NAACL 2025** Workshop on Language Models for Underserved Communities
 - **CVPR 2025** Workshop on Vision-Language Models for All
 - **ICCV 2025** Workshop on Computer Vision for Developing Countries
@@ -66,21 +68,25 @@ Our work has been accepted at multiple top-tier venues:
 The Nayana dataset enables:
 
 **1. Document Understanding**
+
 - Digitizing government documents in local languages
 - Processing multilingual forms and applications
 - Automated translation services
 
 **2. Education**
+
 - Creating learning materials in native languages
 - Accessible textbooks for visually impaired students
 - Language learning applications
 
 **3. Accessibility**
+
 - Screen readers for non-English documents
 - Text-to-speech in regional languages
 - Assistive technology for diverse populations
 
 **4. Business**
+
 - Processing multilingual invoices and receipts
 - Customer service in local languages
 - Content moderation for regional platforms
@@ -100,11 +106,13 @@ The $100,000 grant recognizes this alignment and supports continued development.
 ### Challenge 1: Limited Training Data
 
 **Traditional Approach**: Manually collect and annotate documents
+
 - Expensive
 - Time-consuming
 - Doesn't scale
 
 **Our Approach**: Synthetic data generation
+
 - Automated pipeline
 - Infinite variations
 - Cost-effective at scale
@@ -112,6 +120,7 @@ The $100,000 grant recognizes this alignment and supports continued development.
 ### Challenge 2: Multiple Scripts
 
 Different scripts have different:
+
 - Character sets
 - Rendering requirements
 - Layout conventions
@@ -121,6 +130,7 @@ Different scripts have different:
 ### Challenge 3: Real-World Variations
 
 Synthetic data must match real-world complexity:
+
 - Scan artifacts and noise
 - Multiple fonts and sizes
 - Mixed language documents
@@ -148,9 +158,9 @@ When AI systems can understand and generate content in any language, we unlock o
 **Collaborators**: Adithya S Kolavi and Vyoman Jain at CognitiveLab
 
 **Resources**:
+
 - Dataset: Available on Hugging Face
 - Code: Open-source on GitHub
 - Papers: Available on arXiv
 
 The journey continues, and we're just getting started. 🌍
-

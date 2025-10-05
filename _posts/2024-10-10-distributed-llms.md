@@ -16,12 +16,14 @@ toc:
 Large Language Models are powerful, but accessing them is difficult:
 
 **Cloud APIs**:
+
 - Expensive for extensive use
 - Privacy concerns (data leaves your device)
 - Requires internet connectivity
 - Subject to rate limits and downtime
 
 **Local Deployment**:
+
 - Requires expensive GPUs (RTX 4090, A100)
 - 70B models need 140GB+ VRAM
 - Most consumer hardware insufficient
@@ -47,21 +49,25 @@ Like BitTorrent for LLM inference.
 ### Why This Matters
 
 **Democratization**:
+
 - Anyone with modest hardware can participate
 - No need for expensive GPUs
 - Collective computing power
 
 **Privacy**:
+
 - Data stays within your network
 - No cloud dependency
 - Full control over model and data
 
 **Resilience**:
+
 - No single point of failure
 - Self-healing network
 - Automatic peer discovery
 
 **Cost**:
+
 - Use existing hardware
 - No cloud bills
 - Community-driven
@@ -73,6 +79,7 @@ Like BitTorrent for LLM inference.
 We use **Iroh** for P2P networking:
 
 **Key Features**:
+
 - NAT traversal (works behind routers)
 - Automatic peer discovery
 - Encrypted connections
@@ -80,6 +87,7 @@ We use **Iroh** for P2P networking:
 - DHT for peer routing
 
 **Why Iroh?**:
+
 - Rust-native (performance + safety)
 - Modern P2P protocol
 - Active development
@@ -109,16 +117,19 @@ Each device stores and computes a portion of the model.
 To reduce memory requirements:
 
 **Traditional Quantization**:
+
 - 16-bit → 8-bit → 4-bit
 - Still requires significant memory
 
 **BitNet**:
+
 - **1-bit weights** (-1 or +1)
 - Extreme compression
 - Specialized inference kernels
 - Minimal accuracy loss for certain models
 
 **Benefits**:
+
 - 70B model → ~10GB (instead of 140GB)
 - Fits on consumer devices
 - Faster inference
@@ -127,14 +138,16 @@ To reduce memory requirements:
 ### Inference Pipeline
 
 **Step 1: Request Arrives**
+
 ```
 User Query → Entry Node
 ```
 
 **Step 2: Token Processing**
+
 ```
 For each token:
-  Embedding (Device 1) → 
+  Embedding (Device 1) →
   Layer 1 (Device 1) →
   Layer 2 (Device 1) →
   ...
@@ -146,6 +159,7 @@ For each token:
 ```
 
 **Step 3: Streaming Response**
+
 ```
 Tokens stream back to user as generated
 ```
@@ -153,6 +167,7 @@ Tokens stream back to user as generated
 ### Dynamic Load Balancing
 
 **Challenges**:
+
 - Devices have different capabilities
 - Network conditions vary
 - Some peers join/leave
@@ -160,16 +175,19 @@ Tokens stream back to user as generated
 **Solution**: Smart routing
 
 **Device Profiling**:
+
 - Measure compute speed
 - Track network bandwidth
 - Monitor availability
 
 **Adaptive Sharding**:
+
 - Assign more layers to faster devices
 - Route around slow/offline peers
 - Balance network traffic
 
 **Predictive Scheduling**:
+
 - Anticipate bottlenecks
 - Pre-load data on fast paths
 - Optimize critical paths
@@ -179,11 +197,13 @@ Tokens stream back to user as generated
 ### Self-Healing Network
 
 **Peer Failure Detection**:
+
 - Heartbeat monitoring
 - Timeout thresholds
 - Graceful degradation
 
 **Automatic Recovery**:
+
 ```
 Peer 3 goes offline
   ↓
@@ -197,6 +217,7 @@ Resume inference
 ```
 
 **Redundancy**:
+
 - Critical layers replicated
 - Multiple peers for popular layers
 - Fast failover
@@ -204,11 +225,13 @@ Resume inference
 ### State Management
 
 **Checkpointing**:
+
 - Save intermediate activations
 - Resume from checkpoints on failure
 - Minimize wasted computation
 
 **Coordination**:
+
 - Distributed consensus (Raft)
 - Leader election
 - Consistent state across peers
@@ -226,16 +249,19 @@ Resume inference
 ### Our Modifications
 
 **1. Network-Aware Execution**
+
 - Split execution across network calls
 - Serialize/deserialize tensors efficiently
 - Minimize data transfer
 
 **2. Streaming Support**
+
 - Token-by-token generation across network
 - Low latency response start
 - Pipeline parallelism
 
 **3. Distributed KV Cache**
+
 - Share key-value cache across peers
 - Reduce redundant computation
 - Memory efficiency
@@ -275,6 +301,7 @@ HyperCluster is **actively under development**. Here's where we are:
 **Problem**: Transferring activations between layers is expensive
 
 **Mitigation**:
+
 - Aggressive compression
 - Predictive prefetching
 - Local caching
@@ -285,6 +312,7 @@ HyperCluster is **actively under development**. Here's where we are:
 **Problem**: Devices vary wildly in capability
 
 **Mitigation**:
+
 - Adaptive sharding (give more layers to fast devices)
 - Task-appropriate assignment
 - Continuous profiling
@@ -292,11 +320,13 @@ HyperCluster is **actively under development**. Here's where we are:
 ### 3. Security
 
 **Problem**: Malicious peers could:
+
 - Send incorrect computations
 - Steal data
 - Disrupt network
 
 **Mitigation**:
+
 - Computation verification
 - Encrypted connections
 - Reputation systems
@@ -307,6 +337,7 @@ HyperCluster is **actively under development**. Here's where we are:
 **Problem**: Network hops add latency
 
 **Mitigation**:
+
 - Pipeline parallelism
 - Speculative execution
 - Optimize routing
@@ -316,14 +347,15 @@ HyperCluster is **actively under development**. Here's where we are:
 
 **Setup**: 70B model, 8 consumer devices (RTX 3060, 12GB each)
 
-| Metric | HyperCluster | Local (A100) | Cloud API |
-|--------|--------------|--------------|-----------|
-| Tokens/sec | 8-12 | 30-40 | 20-30 |
-| Cost | $0 | $20k hardware | $0.03/1k tokens |
-| Privacy | Full | Full | None |
-| Latency | 150-200ms | 50ms | 100-150ms |
+| Metric     | HyperCluster | Local (A100)  | Cloud API       |
+| ---------- | ------------ | ------------- | --------------- |
+| Tokens/sec | 8-12         | 30-40         | 20-30           |
+| Cost       | $0           | $20k hardware | $0.03/1k tokens |
+| Privacy    | Full         | Full          | None            |
+| Latency    | 150-200ms    | 50ms          | 100-150ms       |
 
 **Takeaway**: Slower than dedicated hardware, but:
+
 - Accessible to everyone
 - Zero cost for inference
 - Private and censorship-resistant
@@ -333,11 +365,13 @@ HyperCluster is **actively under development**. Here's where we are:
 ### 1. Community AI
 
 **Local Communities**:
+
 - Share computing resources
 - Run models collectively
 - No corporate intermediaries
 
 **Examples**:
+
 - Neighborhood AI collective
 - University research groups
 - Hacker spaces
@@ -345,11 +379,13 @@ HyperCluster is **actively under development**. Here's where we are:
 ### 2. Privacy-Sensitive Applications
 
 **Healthcare**:
+
 - Medical diagnosis without cloud
 - Patient data stays local
 - HIPAA compliance
 
 **Legal**:
+
 - Document analysis
 - Client confidentiality
 - Regulatory compliance
@@ -357,6 +393,7 @@ HyperCluster is **actively under development**. Here's where we are:
 ### 3. Censorship Resistance
 
 **Uncensorable AI**:
+
 - No central control
 - Distributed and resilient
 - Community governance
@@ -364,6 +401,7 @@ HyperCluster is **actively under development**. Here's where we are:
 ### 4. Edge Computing
 
 **IoT Networks**:
+
 - Smart city infrastructure
 - Industrial automation
 - Autonomous vehicle fleets
@@ -375,11 +413,13 @@ HyperCluster is part of a larger movement: **Decentralized AI**.
 ### Why Decentralization Matters
 
 **Concentration of Power**:
+
 - Few companies control powerful models
 - Gatekeeping access
 - Deciding what's acceptable use
 
 **Decentralization Offers**:
+
 - Democratic access
 - Community ownership
 - Innovation without permission
@@ -409,12 +449,14 @@ HyperCluster will be **fully open source**:
 Interested in contributing?
 
 **Needed Skills**:
+
 - Rust programming
 - P2P networking
 - ML inference optimization
 - Distributed systems
 
 **Non-technical Contributions**:
+
 - Documentation
 - Testing
 - Community building
@@ -431,6 +473,7 @@ HyperCluster argues: **No**.
 ### Computing as a Community Resource
 
 We already share:
+
 - Internet bandwidth (mesh networks)
 - Storage (IPFS, torrents)
 - Computing (BOINC, Folding@home)
@@ -440,12 +483,14 @@ Why not share AI inference?
 ### The Edge Computing Future
 
 Cloud computing is powerful, but:
+
 - Centralizes data
 - Creates dependencies
 - Increases latency
 - Raises privacy concerns
 
 Edge computing (including P2P) offers an alternative:
+
 - Data stays local
 - Resilient to outages
 - Lower latency
@@ -499,5 +544,4 @@ Join us in building it.
 
 **Contact**: Let's collaborate on distributed AI!
 
-⚡🌐 *Computing power to the people* 🌐⚡
-
+⚡🌐 _Computing power to the people_ 🌐⚡

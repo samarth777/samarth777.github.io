@@ -6,4 +6,3 @@ related_posts: false
 ---
 
 Papers on **Sanskrit NLP** and **Manimator** accepted at **ICML '25** and **EMNLP '25** workshops!
-

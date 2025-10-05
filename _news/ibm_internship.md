@@ -6,4 +6,3 @@ related_posts: false
 ---
 
 Excited to join **IBM Research India** as a Quantum Research Intern working on AI for Quantum Computing! :rocket:
-

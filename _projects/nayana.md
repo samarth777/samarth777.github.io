@@ -21,6 +21,7 @@ Nayana is a groundbreaking project focused on advancing multilingual and multimo
 ## SynthDoc Library
 
 A comprehensive synthetic document generation library with:
+
 - Support for **22+ languages**
 - Multiple fonts and layouts
 - OCR, VQA, and layout analysis capabilities
@@ -43,4 +44,3 @@ The Nayana dataset addresses a critical gap in multilingual AI by providing high
 - Featured in the multilingual AI research community
 
 [View on Hugging Face](https://huggingface.co)
-

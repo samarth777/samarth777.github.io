@@ -28,6 +28,7 @@ Quantum computing is revolutionary, but it comes with unique challenges:
 ### The Developer Experience Problem
 
 Quantum developers need tools that:
+
 1. Understand quantum concepts and constraints
 2. Generate correct, optimized quantum circuits
 3. Provide intelligent suggestions for common patterns
@@ -40,12 +41,14 @@ Quantum developers need tools that:
 **The Goal**: Automate migration of Qiskit codebase from Python to Rust
 
 **Why This Matters**:
+
 - Rust provides better performance for quantum simulations
 - Memory safety is critical for quantum algorithms
 - IBM is transitioning core Qiskit components to Rust
 
 **What We Built**:
 A CLI-based AI coding agent that:
+
 - Analyzes Python Qiskit code
 - Understands quantum-specific patterns (gates, circuits, transpilation)
 - Generates idiomatic Rust code
@@ -53,6 +56,7 @@ A CLI-based AI coding agent that:
 - Assists developers with testing and validation
 
 **Key Challenges**:
+
 1. **Semantic Preservation**: Quantum gates must behave identically
 2. **API Differences**: Python and Rust Qiskit APIs don't map 1:1
 3. **Performance**: Rust code should be faster, not just equivalent
@@ -68,16 +72,19 @@ An AI tool for quantum developers, similar to GitHub Copilot but quantum-aware.
 **Our Enhancements**:
 
 **1. Autonomous Decision Making**
+
 - Selects appropriate quantum gates for desired operations
 - Chooses optimal transpilation strategies
 - Suggests circuit optimizations
 
 **2. Intelligent Code Generation**
+
 - Context-aware quantum circuit construction
 - Pattern recognition for common quantum algorithms
 - Automatic documentation with quantum explanations
 
 **3. Dynamic Workflow Orchestration**
+
 - Manages multi-step quantum experiments
 - Handles device selection and job submission
 - Integrates with IBM Quantum systems
@@ -98,6 +105,7 @@ An AI tool for quantum developers, similar to GitHub Copilot but quantum-aware.
 **The Solution**: Retrieval-Augmented Generation (RAG) chatbot
 
 **Features**:
+
 - Instant answers to Qiskit questions
 - Code examples from documentation
 - Best practices for quantum circuit design
@@ -111,15 +119,19 @@ An AI tool for quantum developers, similar to GitHub Copilot but quantum-aware.
 Unlike classical code, quantum code has special properties:
 
 **Superposition**: Qubits exist in multiple states
+
 - Agent must understand quantum state evolution
 
 **Entanglement**: Qubits are correlated
+
 - Code generation must preserve entanglement patterns
 
 **Measurement**: Irreversible collapse
+
 - Placement of measurements is critical
 
 **No-cloning theorem**: Can't copy quantum states
+
 - Agent must avoid classical assumptions
 
 ### Agent Architecture
@@ -141,11 +153,13 @@ User Query → Intent Understanding → Quantum Knowledge Base
 ### Training Quantum Agents
 
 **Challenges**:
+
 1. Limited quantum-specific training data
 2. Need for physical understanding
 3. Correctness is critical (quantum errors cascade)
 
 **Our Approach**:
+
 - Fine-tune on Qiskit documentation and code
 - Incorporate quantum textbooks and papers
 - Use quantum simulators for validation
@@ -154,16 +168,19 @@ User Query → Intent Understanding → Quantum Knowledge Base
 ## Impact
 
 ### Developer Productivity
+
 - **Faster migration**: Automating Python→Rust conversion
 - **Better code quality**: AI catches quantum-specific errors
 - **Learning curve**: New quantum developers get instant help
 
 ### Research Acceleration
+
 - Quick prototyping of quantum algorithms
 - Easier experimentation with different approaches
 - More time for scientific innovation, less on boilerplate
 
 ### Democratization
+
 - Makes quantum computing more accessible
 - Lowers barrier to entry for quantum development
 - Helps classical developers transition to quantum
@@ -171,12 +188,14 @@ User Query → Intent Understanding → Quantum Knowledge Base
 ## What I'm Learning
 
 ### Technical Skills
+
 - Quantum computing fundamentals
 - Qiskit and quantum software engineering
 - Building domain-specific AI agents
 - Rust systems programming
 
 ### Research Skills
+
 - Working at the intersection of two cutting-edge fields
 - Collaborating with quantum physicists and ML engineers
 - Thinking about user experience in highly technical domains
@@ -205,4 +224,3 @@ The quantum revolution is coming, and AI will help bring it to everyone.
 **Duration**: June 2025 - Present
 
 Stay tuned for more updates on our quantum AI journey! 🔬⚛️
-

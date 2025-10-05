@@ -74,7 +74,7 @@
   contents:
     - title: manimator
       year: 2024
-      description: 
+      description:
         - AI-powered tool to transform research papers and mathematical concepts into animated visual explanations using the Manim engine
         - Built a scalable pipeline for generating animations from arXiv papers and user prompts, achieving over 15,000+ uses within a week of launch
         - Deployed via FastAPI and Gradio, with Docker support, and featured as Hugging Face's Space of the Week

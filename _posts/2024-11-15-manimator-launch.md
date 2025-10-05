@@ -12,7 +12,7 @@ featured: true
 
 ## The Problem
 
-Research papers are dense. Mathematical concepts can be abstract. And for many learners, the gap between reading a paper and truly *understanding* it feels insurmountable.
+Research papers are dense. Mathematical concepts can be abstract. And for many learners, the gap between reading a paper and truly _understanding_ it feels insurmountable.
 
 What if we could automatically transform research papers into visual, animated explanations? That's exactly what we set out to build with **Manimator**.
 
@@ -47,27 +47,34 @@ We deployed Manimator on Hugging Face Spaces, and the response was overwhelming:
 ### Challenges We Solved
 
 **Challenge 1: Understanding LaTeX Math**
+
 - Research papers are full of complex mathematical notation
 - Solution: Fine-tuned our prompts to handle LaTeX and mathematical reasoning
 
 **Challenge 2: Generating Valid Manim Code**
+
 - Manim has a specific API and syntax
 - Solution: Built a structured generation pipeline with validation steps
 
 **Challenge 3: Scalability**
+
 - Rendering animations is compute-intensive
 - Solution: Optimized with Docker and efficient resource management
 
 ## Real-World Impact
 
 ### Education
+
 Students use Manimator to:
+
 - Understand complex papers in their courses
 - Create presentation materials
 - Build intuition for abstract concepts
 
 ### Research Communication
+
 Researchers leverage it to:
+
 - Visualize their own work for presentations
 - Make their papers more accessible
 - Create supplementary materials for publications
@@ -89,6 +96,7 @@ Manimator is open-source and available on Hugging Face. Whether you're a student
 ## What's Next?
 
 We're working on:
+
 - Support for more paper formats (not just arXiv)
 - Interactive animations where users can adjust parameters
 - Integration with note-taking and learning management systems
@@ -99,4 +107,3 @@ We're working on:
 **Collaborators**: Vyoman Jain, Shiva Golugula, and Motamarri Sai Sathvik
 
 The future of learning is visual, interactive, and AI-powered. Manimator is just the beginning.
-

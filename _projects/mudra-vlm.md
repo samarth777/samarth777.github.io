@@ -19,11 +19,13 @@ Bharatanatyam is one of India's oldest classical dance forms, with a rich vocabu
 ## Technical Approach
 
 ### Vision-Language Model Adaptation
+
 - **Fine-grained Recognition**: Specialized model training for subtle gesture differences
 - **Multimodal Learning**: Combining visual features with textual descriptions
 - **Transfer Learning**: Leveraging pre-trained VLMs and adapting them for cultural domain
 
 ### Challenges Addressed
+
 - **Limited Datasets**: Working with specialized dance gesture data
 - **Fine-grained Distinctions**: Recognizing subtle differences between similar mudras
 - **Cultural Context**: Incorporating traditional knowledge into AI systems
@@ -31,6 +33,7 @@ Bharatanatyam is one of India's oldest classical dance forms, with a rich vocabu
 ## Research Impact
 
 This project demonstrates:
+
 - **Cultural AI**: Applying modern AI techniques to traditional art forms
 - **Heritage Preservation**: Using technology to document and preserve cultural knowledge
 - **Interdisciplinary Research**: Bridging computer science and performing arts
@@ -44,10 +47,10 @@ Accepted at **ICCV 2025 Workshop on Computer Vision for Developing Countries** (
 ## Broader Applications
 
 The techniques developed can be extended to:
+
 - Other classical dance forms (Kathak, Odissi, etc.)
 - Sign language recognition
 - Gesture-based human-computer interaction
 - Cultural education and training tools
 
 This work showcases how AI can serve as a tool for cultural preservation and education, making traditional art forms more accessible to learners worldwide.
-

@@ -15,16 +15,19 @@ SmartGuardian is an autonomous car system that combines Internet of Things (IoT)
 ## Key Features
 
 ### Real-Time Control
+
 - **WebSocket Communication**: Low-latency bidirectional data transmission
 - **Live Video Feed**: Real-time streaming from the vehicle
 - **Remote Control Interface**: User-friendly web-based control panel
 
 ### AI Integration
+
 - **Vision LLMs**: AI-powered visual understanding and annotations
 - **Autonomous Decision Making**: Context-aware responses to environment
 - **Object Detection**: Real-time identification of obstacles and objects
 
 ### IoT Architecture
+
 - **Embedded Systems**: Custom hardware integration
 - **Sensor Fusion**: Multiple sensor data integration
 - **Edge Computing**: On-device AI processing
@@ -40,6 +43,7 @@ SmartGuardian is an autonomous car system that combines Internet of Things (IoT)
 ## Innovation
 
 SmartGuardian represents a convergence of multiple cutting-edge technologies:
+
 - Edge AI for low-latency inference
 - Real-time computer vision
 - Robust IoT communication protocols
@@ -48,9 +52,9 @@ SmartGuardian represents a convergence of multiple cutting-edge technologies:
 ## Applications
 
 While built as an autonomous car, the underlying architecture can be adapted for:
+
 - **Security and Surveillance**: Remote monitoring systems
 - **Industrial Automation**: Autonomous vehicles in warehouses
 - **Research**: Platform for testing autonomous navigation algorithms
 
 [View on GitHub](https://github.com/samarth777)
-

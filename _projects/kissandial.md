@@ -22,12 +22,14 @@ KissanDial is an innovative AI-powered voice assistant designed specifically for
 ## Technical Implementation
 
 ### Architecture
+
 - **LlamaIndex**: AI agent orchestration
 - **Twilio**: Voice call infrastructure
 - **FastAPI**: Backend API
 - **Milvus**: Vector database for knowledge retrieval
 
 ### AI Pipeline
+
 - Speech-to-text conversion
 - Natural language understanding
 - Context-aware information retrieval
@@ -40,6 +42,7 @@ Featured by **LlamaIndex** as an innovative application of AI agents in agricult
 ## Impact
 
 KissanDial addresses the information gap in rural farming communities by providing:
+
 - **Real-time weather updates** for crop planning
 - **Government subsidy information** to maximize farmer benefits
 - **Agricultural best practices** from expert knowledge bases
@@ -50,4 +53,3 @@ KissanDial addresses the information gap in rural farming communities by providi
 The project demonstrates how AI can be adapted for low-tech environments, making sophisticated information systems accessible to communities with limited digital literacy or infrastructure.
 
 [View on GitHub](https://github.com/samarth777)
-

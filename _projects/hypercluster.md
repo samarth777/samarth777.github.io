@@ -14,16 +14,19 @@ HyperCluster is an ambitious project building a peer-to-peer distributed framewo
 ## Key Features
 
 ### Distributed Architecture
+
 - **Self-organizing network** with automatic peer discovery
 - **Fault tolerance** using Iroh protocol
 - **Dynamic layer offloading** for efficient resource utilization
 
 ### Advanced Quantization
+
 - **BitNet quantization** for extreme model compression
 - **Model sharding** across network nodes
 - Support for **llama.cpp** inference engine
 
 ### Edge Computing
+
 - Runs on **consumer hardware**
 - No centralized cloud infrastructure required
 - Collaborative execution across peers
@@ -44,4 +47,3 @@ HyperCluster aims to democratize access to large language models by enabling com
 The project is actively under development with core networking and quantization components being implemented. The system will support multiple LLM architectures and provide seamless peer discovery and load balancing.
 
 [View on GitHub](https://github.com/samarth777)
-

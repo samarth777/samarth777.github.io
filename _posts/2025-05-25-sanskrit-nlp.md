@@ -16,6 +16,7 @@ toc:
 Sanskrit is over 3,500 years old. It's the language of the Vedas, Upanishads, and vast treasures of Indian philosophy, science, and literature. Yet today, it's a "low-resource language" in the AI world.
 
 But here's the thing: **Sanskrit isn't just historical**. It's still used in:
+
 - Religious ceremonies and chants
 - Classical performing arts
 - Academic study
@@ -31,6 +32,7 @@ Making Sanskrit computationally accessible matters for cultural preservation, ed
 In Sanskrit, when words come together, they don't just sit side by side. They **fuse** together following complex phonetic rules. This is called **Sandhi** (संधि), meaning "junction" or "union."
 
 **Example**:
+
 ```
 रामः + अयम् → रामोऽयम्
 (rāmaḥ + ayam → rāmo'yam)
@@ -42,6 +44,7 @@ The final 'ḥ' of रामः combines with initial 'अ' of अयम् to b
 ### Types of Sandhi
 
 **Vowel Sandhi (स्वर-संधि)**
+
 ```
 देव + ऋषि → देवर्षि
 (deva + ṛṣi → devarṣi)
@@ -49,6 +52,7 @@ The final 'ḥ' of रामः combines with initial 'अ' of अयम् to b
 ```
 
 **Consonant Sandhi (व्यञ्जन-संधि)**
+
 ```
 तत् + शिवम् → तच्छिवम्
 (tat + śivam → tacchivam)
@@ -56,6 +60,7 @@ The final 'ḥ' of रामः combines with initial 'अ' of अयम् to b
 ```
 
 **Visarga Sandhi (विसर्ग-संधि)**
+
 ```
 नमः + ते → नमस्ते
 (namaḥ + te → namaste)
@@ -85,11 +90,13 @@ The final 'ḥ' of रामः combines with initial 'अ' of अयम् to b
 Classical approach: Encode all Sandhi rules explicitly.
 
 **Pros**:
+
 - Linguistically motivated
 - Explainable
 - Complete coverage (in theory)
 
 **Cons**:
+
 - Hundreds of rules to implement
 - Complex exception handling
 - Doesn't handle irregular forms well
@@ -100,10 +107,12 @@ Classical approach: Encode all Sandhi rules explicitly.
 Use probabilistic models on annotated Sanskrit corpora.
 
 **Pros**:
+
 - Learns from data
 - Handles common patterns
 
 **Cons**:
+
 - Limited by small dataset size
 - Doesn't generalize well
 - Struggles with rare Sandhi types
@@ -111,18 +120,21 @@ Use probabilistic models on annotated Sanskrit corpora.
 ## Our Approach: The Gemma Sutras
 
 We fine-tuned **Google's Gemma 3** language model for Sanskrit Sandhi Splitting, combining the best of both worlds:
+
 - Neural network's pattern learning
 - Language model's contextual understanding
 
 ### Why Gemma 3?
 
 **Advantages**:
+
 - Open-source and accessible
 - Strong baseline performance
 - Efficient architecture
 - Good multilingual capabilities
 
 **Challenges**:
+
 - Limited Sanskrit in pre-training
 - No specific Sandhi knowledge
 - Needs careful fine-tuning
@@ -132,6 +144,7 @@ We fine-tuned **Google's Gemma 3** language model for Sanskrit Sandhi Splitting,
 **1. Dataset Creation**
 
 We curated a dataset of:
+
 - Classical Sanskrit texts with Sandhi annotations
 - Diverse literary sources (Vedas, epics, kavya)
 - Different Sandhi types and difficulty levels
@@ -140,6 +153,7 @@ We curated a dataset of:
 **2. Fine-tuning Strategy**
 
 **Input Format**:
+
 ```
 Split the following Sanskrit phrase:
 रामोऽयम्
@@ -148,6 +162,7 @@ Context: Describing someone named Rama
 ```
 
 **Output Format**:
+
 ```
 रामः + अयम्
 (rāmaḥ + ayam)
@@ -165,12 +180,14 @@ Explanation: Visarga Sandhi - final ḥ + initial अ → ओ
 ### Results
 
 Our fine-tuned model achieved:
+
 - **87% exact match accuracy** on test set
 - **94% word-level accuracy**
 - **Strong performance** on rare Sandhi types
 - **Good generalization** to unseen texts
 
 Compared to previous approaches:
+
 - Outperformed rule-based systems on edge cases
 - Exceeded statistical methods on rare forms
 - Better context awareness than all baselines
@@ -182,11 +199,13 @@ Compared to previous approaches:
 **Base Model**: Gemma 3 (7B parameters)
 
 **Fine-tuning**:
+
 - LoRA (Low-Rank Adaptation) for efficiency
 - Sanskrit-specific vocabulary augmentation
 - Custom tokenization for Devanagari script
 
 **Training Details**:
+
 - Learning rate: 2e-5
 - Batch size: 8
 - Training epochs: 10
@@ -197,6 +216,7 @@ Compared to previous approaches:
 **Challenge**: Gemma 3 is primarily trained on Latin script
 
 **Solutions**:
+
 1. **Romanization**: IAST (International Alphabet of Sanskrit Transliteration)
 2. **Native Devanagari**: Extended tokenizer
 3. **Hybrid**: Both representations for better understanding
@@ -208,12 +228,13 @@ We found hybrid approach works best.
 Unlike rule-based systems, our model uses context:
 
 **Example**:
+
 ```
 Input: सर्वेऽत्र
 Context: All are present here
 Output: सर्वे + अत्र
 
-Input: सर्वेऽत्र  
+Input: सर्वेऽत्र
 Context: At all times
 Output: सर्व + अत्र
 ```
@@ -225,11 +246,13 @@ Same input, different splits based on meaning!
 ### 1. Digital Humanities
 
 **Sanskrit Text Processing**:
+
 - Digitizing ancient manuscripts
 - Searchable Sanskrit corpora
 - Automated text analysis
 
 **Linguistic Research**:
+
 - Studying Sandhi patterns across texts
 - Diachronic linguistic changes
 - Comparative Indology
@@ -237,11 +260,13 @@ Same input, different splits based on meaning!
 ### 2. Education
 
 **Learning Tools**:
+
 - Interactive Sandhi practice
 - Automatic checking of student exercises
 - Personalized difficulty adjustment
 
 **Translation Aids**:
+
 - Helping learners parse complex sentences
 - Providing step-by-step Sandhi analysis
 - Building vocabulary from roots
@@ -249,11 +274,13 @@ Same input, different splits based on meaning!
 ### 3. Cultural Preservation
 
 **Manuscript Analysis**:
+
 - Automated first-pass processing
 - Consistency checking in editions
 - Variant identification
 
 **Accessibility**:
+
 - Making texts readable to beginners
 - Audio tools with correct pronunciation
 - Simplified versions for modern readers
@@ -279,6 +306,7 @@ Word boundaries in Sanskrit often depend on meaning. Pure syntax isn't enough; s
 ## Publication Journey
 
 Our work was accepted at:
+
 - **ICML 2025 NewInML Workshop** (Non-Archival)
 - **EMNLP 2025 WiNLP Workshop** (Archival)
 
@@ -287,6 +315,7 @@ This dual acceptance reflects both the ML innovation and the linguistic signific
 ## Open Source
 
 We're making The Gemma Sutras available:
+
 - **Model**: Fine-tuned weights on Hugging Face
 - **Dataset**: Training data for researchers
 - **Code**: Preprocessing and training scripts
@@ -304,12 +333,14 @@ We're making The Gemma Sutras available:
 ### Long-term Vision
 
 **Complete Sanskrit NLP Suite**:
+
 - Sandhi splitting (done!)
 - Parsing and syntax analysis
 - Semantic understanding
 - Translation to modern languages
 
 **Other Classical Languages**:
+
 - Latin
 - Ancient Greek
 - Classical Chinese
@@ -320,6 +351,7 @@ The techniques generalize!
 ## Reflections
 
 Working on Sanskrit NLP has been fascinating. It's at the intersection of:
+
 - Ancient wisdom and modern technology
 - Linguistics and machine learning
 - Cultural preservation and innovation
@@ -331,13 +363,14 @@ There's something profound about teaching neural networks to understand rules fo
 **Collaborator**: Sanjay Mahalingam
 
 **Resources**:
+
 - Paper: Available on arXiv
 - Model: Hugging Face
 - Demo: Try it online
 
-**Quote**: 
+**Quote**:
+
 > "योगः कर्मसु कौशलम्" (Yogaḥ karmasu kauśalam)
 > "Excellence in action is yoga" - Bhagavad Gita
 
 May our code be as elegant as the language it processes. 🕉️
-

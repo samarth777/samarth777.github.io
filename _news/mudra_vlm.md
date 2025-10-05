@@ -6,4 +6,3 @@ related_posts: false
 ---
 
 Our paper **Mudra-VLM** on Bharatanatyam mudra recognition accepted at **ICCV '25** workshop! 🎭
-

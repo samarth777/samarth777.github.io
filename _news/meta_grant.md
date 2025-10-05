@@ -6,4 +6,3 @@ related_posts: false
 ---
 
 Awarded the **$100,000 Meta Llama Impact Grant** for advancing multilingual GenAI with the Nayana project! :tada:
-
