@@ -10,7 +10,7 @@ Device 7: Layers 61-70
 Device 8: Output layer
 </code></pre></div></div> <p>Each device stores and computes a portion of the model.</p> <h3 id="quantization-bitnet">Quantization: BitNet</h3> <p>To reduce memory requirements:</p> <p><strong>Traditional Quantization</strong>:</p> <ul> <li>16-bit → 8-bit → 4-bit</li> <li>Still requires significant memory</li> </ul> <p><strong>BitNet</strong>:</p> <ul> <li> <strong>1-bit weights</strong> (-1 or +1)</li> <li>Extreme compression</li> <li>Specialized inference kernels</li> <li>Minimal accuracy loss for certain models</li> </ul> <p><strong>Benefits</strong>:</p> <ul> <li>70B model → ~10GB (instead of 140GB)</li> <li>Fits on consumer devices</li> <li>Faster inference</li> <li>Lower bandwidth</li> </ul> <h3 id="inference-pipeline">Inference Pipeline</h3> <p><strong>Step 1: Request Arrives</strong></p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>User Query → Entry Node
 </code></pre></div></div> <p><strong>Step 2: Token Processing</strong></p> <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>For each token:
-  Embedding (Device 1) → 
+  Embedding (Device 1) →
   Layer 1 (Device 1) →
   Layer 2 (Device 1) →
   ...
