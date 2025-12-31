@@ -51,4 +51,4 @@ This year taught me a lot of necessary things the hard way. **Keep doing good, a
 
 At this point last year, I had absolutely no idea that this is how and where I would be right now. Let's see what happens and where 2026 takes us.
 
-**Happy New Year!** 
+**Happy New Year!**
