@@ -58,7 +58,18 @@ ninja.data = [{
               handler: () => {
                 window.location.href = "/blog/";
               },
-            },{id: "post-ai-meets-quantum-computing-my-journey-at-ibm-research",
+            },{id: "post-reflections-on-2025",
+        
+          title: "Reflections on 2025",
+        
+        description: "My very first blog - a look back at an incredible year",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/reflections-on-2025/";
+          
+        },
+      },{id: "post-ai-meets-quantum-computing-my-journey-at-ibm-research",
         
           title: "AI Meets Quantum Computing: My Journey at IBM Research",
         
