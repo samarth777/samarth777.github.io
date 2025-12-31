@@ -5,7 +5,7 @@ date: 2026-01-01 00:00:00
 description: My very first blog - a look back at an incredible year
 tags: reflections personal
 categories: life
-giscus_comments: true
+giscus_comments: false
 related_posts: false
 ---
 
