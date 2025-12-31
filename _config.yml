@@ -90,6 +90,7 @@ blog_name: Samarth's Blog # blog_name will be displayed in your blog page
 blog_description: Deep dives into AI research, quantum computing, multilingual systems, and building technology for social impact
 permalink: /blog/:year/:title/
 lsi: false # produce an index for related posts
+future: true # allow posts with future dates to be published
 
 # Pagination
 pagination:
