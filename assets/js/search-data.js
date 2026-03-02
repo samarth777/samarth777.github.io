@@ -58,7 +58,18 @@ ninja.data = [{
               handler: () => {
                 window.location.href = "/blog/";
               },
-            },{id: "post-reflections-on-2025",
+            },{id: "post-death-of-happiness",
+        
+          title: "Death of Happiness",
+        
+        description: "A small moment during pooja that left me thinking for hours",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/death-of-happiness/";
+          
+        },
+      },{id: "post-reflections-on-2025",
         
           title: "Reflections on 2025",
         
