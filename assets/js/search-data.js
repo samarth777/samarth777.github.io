@@ -62,7 +62,7 @@ ninja.data = [{
         
           title: "Posters I liked at ICML 2026",
         
-        description: "A curated gallery of 114 research posters that caught my eye on the floor at ICML 2026 in Vancouver.",
+        description: "A curated gallery of 114 research posters that caught my eye on the floor at ICML 2026 in Seoul, South Korea.",
         section: "Posts",
         handler: () => {
           
