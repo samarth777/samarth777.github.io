@@ -58,7 +58,18 @@ ninja.data = [{
               handler: () => {
                 window.location.href = "/blog/";
               },
-            },{id: "post-death-of-happiness",
+            },{id: "post-posters-i-liked-at-icml-2026",
+        
+          title: "Posters I liked at ICML 2026",
+        
+        description: "A curated gallery of 114 research posters that caught my eye on the floor at ICML 2026 in Vancouver.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/icml-2026-posters/";
+          
+        },
+      },{id: "post-death-of-happiness",
         
           title: "Death of Happiness",
         
