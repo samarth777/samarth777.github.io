@@ -117,6 +117,7 @@ article > .clearfix p {
 }
 
 article > .clearfix blockquote {
+  background: transparent;
   border-left-width: 3px;
   border-radius: 0 0.35rem 0.35rem 0;
   font-size: 1.08rem;
@@ -135,16 +136,16 @@ article > h2,
 }
 
 body .navbar {
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  background-color: rgba(255, 255, 255, 0.86);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background-color: transparent;
   min-height: 58px;
-  opacity: 0.94;
+  opacity: 1;
 }
 
 html[data-theme="dark"] .navbar,
 html[data-theme-setting="dark"] .navbar {
-  background-color: rgba(18, 18, 20, 0.88);
+  background-color: transparent;
 }
 
 .navbar .nav-link,
