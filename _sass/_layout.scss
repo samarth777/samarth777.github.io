@@ -98,10 +98,6 @@ article > .clearfix {
   max-width: 48rem;
 }
 
-article > .clearfix:has(> .research-profile-art) {
-  max-width: none;
-}
-
 article > .clearfix p {
   margin-bottom: 1.15rem;
 }
@@ -138,24 +134,6 @@ article > h2,
 
 .navbar .navbar-nav .nav-item.active > .nav-link {
   font-weight: 650;
-}
-
-.research-profile-art {
-  background: #080815;
-  border: 1px solid rgba(197, 26, 191, 0.22);
-  border-radius: 16px;
-  box-shadow: 0 18px 48px rgba(26, 17, 53, 0.16);
-  margin-bottom: 1.4rem;
-  margin-left: 2.15rem;
-  overflow: hidden;
-  width: 31%;
-}
-
-.research-profile-art img {
-  aspect-ratio: 3 / 4;
-  display: block;
-  object-fit: cover;
-  width: 100%;
 }
 
 .news .table-responsive {
@@ -311,13 +289,6 @@ footer.fixed-bottom {
 
   .post {
     padding-top: 1.5rem;
-  }
-
-  .research-profile-art {
-    float: none !important;
-    margin: 0 auto 1.75rem;
-    max-width: 320px;
-    width: 78%;
   }
 
   .publications .abbr {

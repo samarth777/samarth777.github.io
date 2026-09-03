@@ -16,15 +16,11 @@ announcements:
 
 > Research Engineer in the **Algorithms and Applications** team at [IBM Research](https://research.ibm.com/), working on AI and quantum algorithms for solving partial differential equations.
 >
-> Previously at [Microsoft Research India](https://www.microsoft.com/en-us/research/lab/microsoft-research-india/), IBM Research, and [CognitiveLab](https://www.cognitivelab.in/). Computer Science graduate from [PES University](https://pes.edu/), Bangalore.
-
-<div class="research-profile-art float-right">
-  <img src="{{ '/assets/img/research-space-profile.webp' | relative_url }}" alt="A violet eclipse surrounded by orbital paths and flowing scientific field lines in deep space" fetchpriority="high">
-</div>
+> Previously interned at [Microsoft Research India](https://www.microsoft.com/en-us/research/lab/microsoft-research-india/), IBM Research, and [CognitiveLab](https://www.cognitivelab.in/). Computer Science graduate from [PES University](https://pes.edu/), Bangalore.
 
 I’m interested in **multimodal AI**, **AI for science**, and **quantum algorithms**—especially where AI and quantum computing meet. At [IBM Research](https://research.ibm.com/), I’m exploring classical and quantum methods for scientific computing, with a focus on partial differential equations.
 
-Previously, I worked with the Advanced Reasoning team at [Microsoft Research India](https://www.microsoft.com/en-us/research/lab/microsoft-research-india/) on synthetic environments, reinforcement learning, and tool use for small language models. During an earlier IBM Research internship, I built agentic and retrieval-augmented tools for quantum workflows.
+Previously, I interned with the Advanced Reasoning team at [Microsoft Research India](https://www.microsoft.com/en-us/research/lab/microsoft-research-india/), working on synthetic environments, reinforcement learning, and tool use for small language models. During an earlier IBM Research internship, I built agentic and retrieval-augmented tools for quantum workflows.
 
 At [CognitiveLab](https://www.cognitivelab.in/), I helped build [**Nayana**](https://openaccess.thecvf.com/content/ICCV2025W/CV4DC/html/Kolavi_Nayana_A_Foundation_for_Document-Centric_Vision-Language_Models_via_Multi-Task_Multimodal_ICCVW_2025_paper.html), a family of document-centric vision-language systems spanning millions of synthetic pages across 22 languages. Supported by a **$100,000 Meta Llama Impact Grant**, this work shaped my interest in multimodal research.
 
