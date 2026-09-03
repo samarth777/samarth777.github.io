@@ -18,12 +18,6 @@ announcements:
 >
 > Previously at [Microsoft Research India](https://www.microsoft.com/en-us/research/lab/microsoft-research-india/), IBM Research, and [CognitiveLab](https://www.cognitivelab.in/). Computer Science graduate from [PES University](https://pes.edu/), Bangalore.
 
-I’m interested in **AI for science**, **quantum algorithms**, and building the systems that turn research ideas into useful tools. My current work explores how classical AI and quantum methods can help solve scientific-computing problems, particularly partial differential equations.
+I’m interested in **multimodal AI**, **AI for science**, and **quantum algorithms**—especially the possibilities that emerge where AI and quantum computing meet.
 
-At Microsoft Research India, I worked with the Advanced Reasoning team on synthetic environments, reinforcement learning, and complex tool use for small language models. During an earlier AI for Quantum internship at IBM Research, I built agentic and retrieval-augmented tools for quantum workflows and contributed to the Qiskit developer experience.
-
-At CognitiveLab, I helped build **Nayana**: a family of document-centric vision-language systems supported by millions of synthetic pages across 22 languages. The project received a **$100,000 Meta Llama Impact Grant** and led to work on multilingual OCR, document understanding, and retrieval.
-
-My other projects include **ReviewArena**, an ICML 2026 AI for Science Spotlight for evaluating LLM peer reviewers; **HyperCluster**, a decentralized LLM inference system published at DAIS 2026; **EarthInfer**, an agentic Earth-observation framework presented at the WACV 2026 CV4EO workshop; and **Manimator**, which turns research papers into animated explanations.
-
-I’m always happy to talk about research collaborations, ambitious systems, or interesting scientific problems—please feel free to reach out.
+At CognitiveLab, I helped build **Nayana**, a family of document-centric vision-language systems spanning millions of synthetic pages across 22 languages. That work, supported by a **$100,000 Meta Llama Impact Grant**, shaped my interest in multimodal research. At IBM Research, I’m now extending that curiosity to scientific computing, exploring classical AI and quantum methods for solving partial differential equations.
