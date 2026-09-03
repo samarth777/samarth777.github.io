@@ -20,7 +20,7 @@ announcements:
 
 I’m interested in **multimodal AI**, **AI for science**, and **quantum algorithms**—especially where AI and quantum computing meet. At [IBM Research](https://research.ibm.com/), I’m exploring classical and quantum methods for scientific computing, with a focus on partial differential equations.
 
-Previously, I worked with the Advanced Reasoning team at [Microsoft Research India](https://www.microsoft.com/en-us/research/lab/microsoft-research-india/) on synthetic environments, reinforcement learning, and tool use for small language models. During an earlier IBM Research internship, I built agentic and retrieval-augmented tools for quantum workflows and contributed to [Qiskit](https://www.ibm.com/quantum/qiskit).
+Previously, I worked with the Advanced Reasoning team at [Microsoft Research India](https://www.microsoft.com/en-us/research/lab/microsoft-research-india/) on synthetic environments, reinforcement learning, and tool use for small language models. During an earlier IBM Research internship, I built agentic and retrieval-augmented tools for quantum workflows.
 
 At [CognitiveLab](https://www.cognitivelab.in/), I helped build [**Nayana**](https://openaccess.thecvf.com/content/ICCV2025W/CV4DC/html/Kolavi_Nayana_A_Foundation_for_Document-Centric_Vision-Language_Models_via_Multi-Task_Multimodal_ICCVW_2025_paper.html), a family of document-centric vision-language systems spanning millions of synthetic pages across 22 languages. Supported by a **$100,000 Meta Llama Impact Grant**, this work shaped my interest in multimodal research.
 
