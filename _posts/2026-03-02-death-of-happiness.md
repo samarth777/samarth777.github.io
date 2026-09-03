@@ -25,9 +25,9 @@ The ant struggled in pain, crippling, still trying to move and run. She hit it a
 
 The girl didn't even notice. She picked up another toy and kept playing. No one in that big room noticed the small ant. But the ant was dead. No one to go back to the colony now. No one to bring the others to the food.
 
-I know, I know — *what a weird guy, sitting in the middle of pooja, emotionally invested in an ant.* But that's just who I am. I notice every small thing. Even the tiniest of things. And I can't help it.
+I know, I know — _what a weird guy, sitting in the middle of pooja, emotionally invested in an ant._ But that's just who I am. I notice every small thing. Even the tiniest of things. And I can't help it.
 
-I believe every life on this planet has the same value, the same right to exist — that no one is truly superior. I know how nature works, and yes, someone will say we're superior because of the cortex. Maybe. But I think if anything, that intelligence should make us *more* aware — not less. Being more intelligent doesn't make a life more important. If anything, it should make us better at understanding that every life on this earth matters equally.
+I believe every life on this planet has the same value, the same right to exist — that no one is truly superior. I know how nature works, and yes, someone will say we're superior because of the cortex. Maybe. But I think if anything, that intelligence should make us _more_ aware — not less. Being more intelligent doesn't make a life more important. If anything, it should make us better at understanding that every life on this earth matters equally.
 
 That's just my way of looking at it.
 

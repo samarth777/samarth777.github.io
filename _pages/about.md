@@ -11,7 +11,6 @@ announcements:
   enabled: true # includes a list of news items
   scrollable: true # adds a vertical scroll bar if there are more than 3 news items
   limit: 7 # leave blank to include all the news in the `_news` folder
-
 ---
 
 > Research Engineer in the **Algorithms and Applications** team at [IBM Research](https://research.ibm.com/), working on AI and quantum algorithms for solving partial differential equations.
