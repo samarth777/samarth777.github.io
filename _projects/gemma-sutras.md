@@ -2,7 +2,6 @@
 layout: page
 title: The Gemma Sutras
 description: Fine-tuning Gemma 3 for Sanskrit Sandhi Splitting
-img: assets/img/6.jpg
 importance: 8
 category: work
 related_publications: true

@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Excited to join **IBM Research India** as a Quantum Research Intern working on AI for Quantum Computing! :rocket:
+Joined **IBM Research India** as a Quantum Research Intern, working on agentic and retrieval-augmented tools for quantum-computing workflows.

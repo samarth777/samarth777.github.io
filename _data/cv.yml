@@ -3,142 +3,126 @@
   contents:
     - name: Full Name
       value: Samarth P
-    - name: Contact
-      value: +91 7337610771
     - name: Email
       value: samarthprakash8@gmail.com
     - name: Location
       value: Bengaluru, India
-    - name: Languages
-      value: English, Hindi, Kannada
-
-- title: Education
-  type: time_table
-  contents:
-    - title: B.Tech, Computer Science and Engineering
-      institution: PES University, EC Campus, Bengaluru, India
-      year: 2022 - Present
-      description:
-        - CGPA 8.5
-        - Focus on AI, Machine Learning, and Quantum Computing
-    - title: Grade XII CBSE
-      institution: GEAR Innovative International School, Bengaluru, India
-      year: 2020 - 2022
-      description:
-        - Percentage 87.6%
-    - title: Grade X ICSE
-      institution: Chinmaya Vidyalaya, Koramangala, Bengaluru, India
-      year: 2010 - 2020
-      description:
-        - Percentage 92%
+    - name: Research Interests
+      value: AI for science, quantum algorithms, scientific computing, language models
 
 - title: Experience
   type: time_table
   contents:
-    - title: Quantum Research Intern – AI for Quantum
-      institution: IBM Research India, Bengaluru, India
-      year: June 2025 - Present
+    - title: Research Engineer — Algorithms and Applications
+      institution: IBM Research, Bengaluru, India
+      year: July 2026 - Present
       description:
-        - Built a CLI-based AI coding agent that automates the migration of the Qiskit codebase from Python into Rust, assisting developers with seamless translation and optimization
-        - Enhanced Qiskit Code Assistant and Qiskit Studio with Agentic AI systems capable of autonomous decision-making, intelligent code generation, context-aware suggestions, and dynamic workflow orchestration
-        - Developed advanced Retrieval-Augmented Generation (RAG) chatbots to assist and streamline quantum computing workflows
-
+        - Developing AI and quantum algorithms for scientific computing, with a current focus on solving partial differential equations.
+    - title: Research Intern — Advanced Reasoning
+      institution: Microsoft Research India, Bengaluru, India
+      year: January 2026 - June 2026
+      description:
+        - Built a framework for generating synthetic mock MCP servers and large-scale tool-calling datasets.
+        - Worked on reinforcement-learning post-training of small language models for complex tool-use workflows.
+        - Designed rubric-based reward systems for training and evaluating deep-research agents.
+    - title: Quantum Research Intern — AI for Quantum
+      institution: IBM Research India, Bengaluru, India
+      year: June 2025 - August 2025
+      description:
+        - Built a CLI coding agent to assist with translating Python components of Qiskit workflows into Rust.
+        - Contributed agentic code generation and context-aware assistance to Qiskit developer tooling.
+        - Developed retrieval-augmented assistants for quantum-computing workflows and support.
     - title: AI Research Intern
       institution: CognitiveLab, Bengaluru, India
       year: August 2024 - June 2025
       description:
-        - Developed a scalable synthetic data framework to adapt Vision-Language Models (VLMs) for over 22 languages and multilingual documents
-        - Created the Nayana Synthetic Dataset with 2M+ document images, supporting OCR, VQA, and layout analysis in low-resource languages
-        - Trained, finetuned and released SOTA models, published papers in top tier venues
-        - Awarded a $100,000 Llama Impact Grant from Meta in early 2025, recognizing contribution to multilingual GenAI
-
+        - Developed a scalable synthetic-data framework for adapting vision-language models to multilingual documents across 22 languages.
+        - Helped create the Nayana dataset with millions of document images for OCR, VQA, layout analysis, and retrieval.
+        - Trained and released models and co-authored work at NAACL, CVPR, ICCV, and related workshops.
+        - The project received a $100,000 Meta Llama Impact Grant.
     - title: Summer Research Intern
       institution: IIIT Bangalore, Bengaluru, India
       year: June 2024 - August 2024
       description:
-        - Implemented "Parichaya" a pipeline to easily search information from a corpus in colloquial Indic languages
-        - Developed a RAG-based AI system for multi-modal question answering in Kannada
-        - Created a full stack web application in Next.js and FastAPI
-        - Worked under Prof. Srinath Srinivasa on the IndicNLP project
+        - Developed Parichaya, a retrieval and multimodal question-answering interface for colloquial Kannada community knowledge.
+        - Built the supporting application with Next.js and FastAPI under Prof. Srinath Srinivasa.
 
-    - title: Project Intern
-      institution: Bosch University Connect Program, Bengaluru, India
-      year: March 2024 - March 2025
+- title: Education
+  type: time_table
+  contents:
+    - title: B.Tech. in Computer Science and Engineering
+      institution: PES University, EC Campus, Bengaluru, India
+      year: 2022 - 2026
       description:
-        - Developed a GenAI platform for Bosch to assist Technicians with Troubleshoot Assistance
-        - Implemented RAG (Retrieval-Augmented Generation) and Agentic AI system to input vehicle issues and receive step-by-step troubleshooting guidance
-        - Used LlamaIndex to create the AI pipeline and Next.js and FastAPI for the interface
+        - CGPA 8.5/10
 
 - title: Selected Projects
   type: time_table
   contents:
-    - title: manimator
-      year: 2024
+    - title: ReviewArena
+      year: 2026
       description:
-        - AI-powered tool to transform research papers and mathematical concepts into animated visual explanations using the Manim engine
-        - Built a scalable pipeline for generating animations from arXiv papers and user prompts, achieving over 15,000+ uses within a week of launch
-        - Deployed via FastAPI and Gradio, with Docker support, and featured as Hugging Face's Space of the Week
-
-    - title: SynthDoc
-      year: 2024
-      description:
-        - Built a synthetic document generation library with support for multiple languages, fonts, and layouts for OCR, VQA, and layout analysis tasks
-        - Used to create the Nayana Synthetic Dataset 2M+ Indic document images, the largest of its kind
-        - Scaled generation using Modal with 100 CPU and 10 GPU instances in parallel
-
+        - Built a cross-conference dataset of 51,529 papers and 196,099 reviews and a venue-aware benchmark for LLM peer review.
+        - Accepted as a Spotlight at the ICML 2026 AI for Science workshop.
     - title: HyperCluster
-      year: 2024 - Present
+      year: 2025 - 2026
       description:
-        - Developed a peer-to-peer distributed framework for deploying quantized large language models on edge devices
-        - Implementing self-organizing network with automatic peer discovery and fault tolerance using Iroh
-        - Building distributed LLM inference system with model sharding across network nodes, BitNet quantization, and dynamic layer offloading
-
+        - Developed decentralized LLM inference across heterogeneous devices using peer-to-peer networking, automatic model sharding, and ring-based pipelining.
+        - Published at DAIS 2026 and presented at the AAAI 2026 ML4Wireless workshop.
+    - title: manimator
+      year: 2024 - 2025
+      description:
+        - Built an open-source system that transforms research papers and mathematical concepts into Manim animations using LLMs.
+        - Reached more than 15,000 uses in its launch week and was featured as a Hugging Face Space of the Week.
+    - title: Nayana and SynthDoc
+      year: 2024 - 2025
+      description:
+        - Built multilingual synthetic-document generation infrastructure for OCR, VQA, layout analysis, and retrieval across 22 languages.
+        - Scaled dataset generation across 100 CPU and 10 GPU workers.
     - title: KissanDial
       year: 2024
       description:
-        - Developed a voice call-based AI agent assistant for farmers, providing vital information on agricultural subsidies, weather updates, and more
-        - Featured by LlamaIndex as an innovative application of using AI agents in agriculture
+        - Developed a voice-call AI assistant for farmers using LlamaIndex, Twilio, FastAPI, and Milvus.
 
 - title: Honors and Awards
   type: time_table
   contents:
+    - year: 2026
+      items:
+        - Spotlight paper and contributed talk, ICML 2026 AI for Science Workshop — ReviewArena
     - year: 2025
       items:
-        - Meta Llama Impact Grant ($100,000) - Advancing Multilingual GenAI
+        - Meta Llama Impact Grant ($100,000) — Nayana
     - year: 2024
       items:
-        - AMD Kria KR260 FPGA - AMD Pervasive AI Hackathon, Robotics AI Category
+        - AMD Kria KR260 FPGA — AMD Pervasive AI Hackathon, Robotics AI category
 
 - title: Technical Skills
   type: nested_list
   contents:
-    - title: Programming Languages
+    - title: Research
       items:
-        - Python, C/C++, Java, JavaScript, Go, Dart, SQL, Assembly, Shell
-    - title: AI/ML Frameworks
+        - AI for science, quantum computing, reinforcement learning, LLMs, VLMs, RAG, computer vision
+    - title: Languages
       items:
-        - LlamaIndex, LangChain, CrewAI, PyTorch, TensorFlow, Hugging Face, Transformers
-        - Scikit-learn, llama.cpp, SGLang, vLLM, Qiskit, NumPy, pandas
-    - title: Web Technologies
+        - Python, C/C++, Java, JavaScript/TypeScript, Go, Rust, SQL, Shell
+    - title: ML and Scientific Computing
       items:
-        - React, Next.js, Node.js, FastAPI, Flask, Django, REST APIs
-    - title: Cloud & Infrastructure
+        - PyTorch, TensorFlow, Hugging Face Transformers, Qiskit, NumPy, pandas, scikit-learn, vLLM, SGLang, llama.cpp
+    - title: Systems and Applications
       items:
-        - Google Cloud, Amazon Web Services, Microsoft Azure, Vercel, Docker, Modal
-    - title: Databases & Big Data
-      items:
-        - MongoDB, Firebase, Hadoop, Kafka, Spark, Zookeeper
-    - title: Specializations
-      items:
-        - AI, Machine Learning, Deep Learning, LLMs, VLMs, RAG, Computer Vision
-        - Quantum Computing, Embedded Systems, IoT
+        - FastAPI, React, Next.js, Docker, Kafka, Spark, AWS, Azure, Google Cloud, Modal
 
 - title: Publications
   type: list
   contents:
-    - <strong>Parichaya&#58; Rural Colloquial Knowledge AI Interface</strong> - CODS-COMAD '24
-    - <strong>Nayana OCR&#58; A Scalable Framework for Document OCR in Low-Resource Languages</strong> - NAACL '25 Workshop
-    - <strong>Nayana&#58; A Foundation for Document-Centric Vision-Language Models</strong> - CVPR '25 Workshop (Non-Archival), ICCV '25 Workshop
-    - <strong>Manimator&#58; Transforming Research Papers into Visual Explanations</strong> - ICML '25 NewInML Workshop (Non-Archival)
-    - <strong>The Gemma Sutras&#58; Fine-Tuning Gemma 3 for Sanskrit Sandhi Splitting</strong> - ICML '25 NewInML Workshop (Non-Archival), EMNLP '25 WiNLP Workshop (Archival)
-    - <strong>Mudra-VLM&#58; Adapting Vision-Language Models for Fine-Grained Bharatanatyam Mudra Recognition</strong> - ICCV '25 Workshop (Non-Archival)
+    - <strong>ReviewArena&#58; A Large-Scale Cross-Conference Dataset and Benchmark for LLM Peer Review</strong> — ICML 2026 AI for Science Workshop, Spotlight
+    - <strong>HyperCluster&#58; Decentralized Large Language Model Inference over Peer-to-Peer Wireless Networks</strong> — DAIS 2026
+    - <strong>EarthInfer&#58; Agentic Reasoning with Dynamic Modality Generation for Earth Observation</strong> — WACV 2026 CV4EO Workshop
+    - <strong>Benchmarking the Quantum Frontier&#58; Evaluating QML Models on Core Learning Tasks</strong> — AIMLSystems 2025
+    - <strong>The Gemma Sutras&#58; Fine-Tuning Gemma 3 for Sanskrit Sandhi Splitting</strong> — EMNLP 2025 WiNLP
+    - <strong>Nayana&#58; A Foundation for Document-Centric Vision-Language Models</strong> — ICCV 2025 CV4DC Workshop; CVPR 2025 VLMs4All Workshop
+    - <strong>Nayana OCR&#58; A Scalable Framework for Document OCR in Low-Resource Languages</strong> — NAACL 2025 LM4UC Workshop
+    - <strong>Manimator&#58; Transforming Research Papers into Visual Explanations</strong> — ICML 2025 NewInML Workshop
+    - <strong>Mudra-VLM&#58; Adapting Vision-Language Models for Fine-Grained Bharatanatyam Mudra Recognition</strong> — ICCV 2025 CV4DC Workshop
+    - <strong>Parichaya&#58; Rural Colloquial Knowledge AI Interface</strong> — CODS-COMAD 2024

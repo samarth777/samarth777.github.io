@@ -2,7 +2,6 @@
 layout: page
 title: SmartGuardian
 description: Autonomous car system combining IoT with AI for remote control and monitoring
-img: assets/img/9.jpg
 importance: 5
 category: fun
 github: https://github.com/samarth777

@@ -2,9 +2,9 @@
 layout: page
 permalink: /publications/
 title: publications
-description: Research publications at top-tier conferences and workshops including NAACL, CVPR, ICCV, ICML, EMNLP, and CODS-COMAD.
+description: Publications on AI for science, quantum machine learning, multilingual vision-language models, and distributed AI systems.
 nav: true
-nav_order: 2
+nav_order: 1
 ---
 
 <!-- _pages/publications.md -->

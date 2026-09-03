@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Papers on **Sanskrit NLP** and **Manimator** accepted at **ICML '25** and **EMNLP '25** workshops!
+**The Gemma Sutras** and **Manimator** were accepted at workshops co-located with **EMNLP 2025** and **ICML 2025**.

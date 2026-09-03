@@ -2,11 +2,11 @@
 layout: page
 title: projects
 permalink: /projects/
-description: AI/ML projects spanning quantum computing, multilingual AI, distributed systems, and real-world applications.
+description: Selected research systems and things I have built.
 nav: true
-nav_order: 3
+nav_order: 2
 display_categories: [work, fun]
-horizontal: false
+horizontal: true
 ---
 
 <!-- pages/projects.md -->

@@ -2,7 +2,6 @@
 layout: page
 title: EmoStream
 description: Real-time emoji streaming and visualization system using Kafka and Spark
-img: assets/img/11.jpg
 importance: 6
 category: fun
 github: https://github.com/samarth777

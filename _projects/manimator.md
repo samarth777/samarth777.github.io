@@ -2,10 +2,9 @@
 layout: page
 title: manimator
 description: AI-powered tool to transform research papers into animated visual explanations
-img: assets/img/12.jpg
 importance: 1
 category: work
-github: https://github.com/samarth777
+github: https://github.com/HyperCluster-Tech/manimator
 related_publications: true
 ---
 
@@ -38,4 +37,4 @@ Manimator is an innovative AI-powered tool that transforms research papers and m
 
 Manimator democratizes access to complex mathematical and scientific concepts by making them visually accessible. The tool has been embraced by the research community for creating educational content and presentation materials.
 
-[View on GitHub](https://github.com/samarth777) | [Try on Hugging Face](https://huggingface.co)
+[View the code](https://github.com/HyperCluster-Tech/manimator) | [Read the paper](https://arxiv.org/abs/2507.14306)

@@ -3,9 +3,8 @@ layout: cv
 permalink: /cv/
 title: cv
 nav: true
-nav_order: 5
-cv_pdf: Samarth_P_Resume_MSR.pdf
-description: My detailed curriculum vitae including education, research experience, publications, projects, and technical skills.
+nav_order: 4
+description: Experience, education, selected projects, awards, and technical background.
 toc:
   sidebar: left
 ---

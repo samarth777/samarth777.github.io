@@ -7,3 +7,35 @@
 
 "Vision":
   color: "#009f36"
+
+"ICML":
+  url: https://icml.cc/
+  color: "#9f0036"
+
+"DAIS":
+  url: https://www.discotec.org/2026/dais
+  color: "#00369f"
+
+"WACV":
+  url: https://wacv.thecvf.com/
+  color: "#6f009f"
+
+"AIMLSystems":
+  url: https://www.aimlsystems.org/
+  color: "#8a5a00"
+
+"EMNLP":
+  url: https://2025.emnlp.org/
+  color: "#7a3268"
+
+"ICCV":
+  url: https://iccv.thecvf.com/
+  color: "#005f73"
+
+"NAACL":
+  url: https://2025.naacl.org/
+  color: "#087f5b"
+
+"CODS-COMAD":
+  url: https://cods-comad.in/
+  color: "#495057"

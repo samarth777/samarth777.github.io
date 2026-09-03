@@ -2,7 +2,6 @@
 layout: page
 title: KissanDial
 description: Voice call-based AI agent assistant for farmers
-img: assets/img/7.jpg
 importance: 4
 category: work
 github: https://github.com/samarth777

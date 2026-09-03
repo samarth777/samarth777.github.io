@@ -2,7 +2,6 @@
 layout: page
 title: Mudra-VLM
 description: Vision-Language Models for Bharatanatyam mudra recognition
-img: assets/img/1.jpg
 importance: 7
 category: work
 related_publications: true

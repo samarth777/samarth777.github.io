@@ -3,7 +3,7 @@ layout: page
 permalink: /repositories/
 title: repositories
 description: My GitHub profile and open-source projects including manimator, SynthDoc, HyperCluster, and more.
-nav: true
+nav: false
 nav_order: 4
 ---
 

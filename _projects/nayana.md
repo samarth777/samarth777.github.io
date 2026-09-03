@@ -1,8 +1,7 @@
 ---
 layout: page
 title: Nayana & SynthDoc
-description: Synthetic dataset generation for multilingual Vision-Language Models
-img: assets/img/3.jpg
+description: Document-centric vision-language models and synthetic data across 22 languages
 importance: 2
 category: work
 related_publications: true
@@ -10,19 +9,19 @@ related_publications: true
 
 ## Overview
 
-Nayana is a groundbreaking project focused on advancing multilingual and multimodal AI through synthetic data generation. The project includes **SynthDoc**, a powerful library for generating synthetic documents, and the **Nayana Synthetic Dataset**, containing over 2M+ document images across 22+ languages.
+Nayana advances multilingual and multimodal document AI through synthetic data generation. The project includes **SynthDoc**, a library for generating synthetic documents, and the **Nayana Synthetic Dataset**, with 3 million richly annotated base documents and multilingual variants spanning 22 languages.
 
 ## Key Achievements
 
 - **Meta Llama Impact Grant**: Awarded **$100,000** for advancing multilingual GenAI
 - **Publications**: Papers accepted at NAACL, CVPR, and ICCV workshops
-- **Largest of its Kind**: Created the largest multilingual synthetic document dataset
+- **Broad coverage**: Layout, reading order, OCR, VQA, and document-retrieval annotations
 
 ## SynthDoc Library
 
 A comprehensive synthetic document generation library with:
 
-- Support for **22+ languages**
+- Support for **22 languages**
 - Multiple fonts and layouts
 - OCR, VQA, and layout analysis capabilities
 - Scalable generation using Modal with **100 CPU and 10 GPU instances** in parallel
