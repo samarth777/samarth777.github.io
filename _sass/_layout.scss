@@ -61,6 +61,20 @@ body {
   font-size: 1rem;
   line-height: 1.68;
   letter-spacing: -0.005em;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.58)),
+    url("../img/watercolor-mountain-background.webp");
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+html[data-theme="dark"] body,
+html[data-theme-setting="dark"] body {
+  background-image:
+    linear-gradient(rgba(18, 18, 20, 0.84), rgba(18, 18, 20, 0.84)),
+    url("../img/watercolor-mountain-background.webp");
 }
 
 body.fixed-top-nav {
@@ -120,11 +134,17 @@ article > h2,
   margin-bottom: 1.15rem;
 }
 
-.navbar {
+body .navbar {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  background-color: rgba(255, 255, 255, 0.86);
   min-height: 58px;
   opacity: 0.94;
+}
+
+html[data-theme="dark"] .navbar,
+html[data-theme-setting="dark"] .navbar {
+  background-color: rgba(18, 18, 20, 0.88);
 }
 
 .navbar .nav-link,
@@ -278,6 +298,11 @@ footer.fixed-bottom {
 }
 
 @media (max-width: 575px) {
+  body {
+    background-attachment: scroll;
+    background-position: 58% bottom;
+  }
+
   body.fixed-top-nav {
     padding-top: 58px;
   }

@@ -182,6 +182,7 @@ exclude:
   - package.json
   - package-lock.json
   - _pages/about_einstein.md
+  - assets/jupyter/blog.ipynb
   - purgecss.config.js
   - README.md
   - readme_preview/
