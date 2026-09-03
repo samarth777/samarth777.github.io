@@ -68,6 +68,29 @@ table.institution {
   margin-bottom: 1rem;
 }
 
+@media (min-width: 768px) {
+  .cv-timeline-row {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: 1.5rem;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .cv-timeline-row > .cv-date-column,
+  .cv-timeline-row > .cv-entry-content {
+    flex: none;
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+    width: auto;
+  }
+
+  .cv-timeline-row .ml-md-4 {
+    margin-left: 0 !important;
+  }
+}
+
 td.department {
   font-size: 0.8rem;
 }
