@@ -136,6 +136,24 @@ article > h2,
   font-weight: 650;
 }
 
+article > .profile {
+  background: #080815;
+  border: 1px solid rgba(197, 26, 191, 0.22);
+  border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(26, 17, 53, 0.16);
+  margin-bottom: 1.4rem;
+  margin-left: 2.15rem;
+  overflow: hidden;
+  width: 31%;
+}
+
+article > .profile img {
+  aspect-ratio: 4 / 5;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
 .news .table-responsive {
   max-height: none !important;
 }
@@ -289,6 +307,13 @@ footer.fixed-bottom {
 
   .post {
     padding-top: 1.5rem;
+  }
+
+  article > .profile {
+    float: none !important;
+    margin: 0 auto 1.75rem;
+    max-width: 320px;
+    width: 78%;
   }
 
   .publications .abbr {

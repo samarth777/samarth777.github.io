@@ -4,6 +4,12 @@ title: about
 permalink: /
 subtitle:
 
+profile:
+  align: right
+  image: research-space-profile.webp
+  image_alt: A violet eclipse surrounded by orbital paths and flowing scientific field lines in deep space
+  image_circular: false
+
 selected_papers: true # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 
