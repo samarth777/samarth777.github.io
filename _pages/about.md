@@ -4,12 +4,6 @@ title: about
 permalink: /
 subtitle:
 
-profile:
-  align: right
-  image: research-space-profile.webp
-  image_alt: A violet eclipse surrounded by orbital paths and flowing scientific field lines in deep space
-  image_circular: false
-
 selected_papers: true # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 
@@ -23,6 +17,10 @@ announcements:
 > Research Engineer in the **Algorithms and Applications** team at [IBM Research](https://research.ibm.com/), working on AI and quantum algorithms for solving partial differential equations.
 >
 > Previously at [Microsoft Research India](https://www.microsoft.com/en-us/research/lab/microsoft-research-india/), IBM Research, and [CognitiveLab](https://www.cognitivelab.in/). Computer Science graduate from [PES University](https://pes.edu/), Bangalore.
+
+<div class="research-profile-art float-right">
+  <img src="{{ '/assets/img/research-space-profile.webp' | relative_url }}" alt="A violet eclipse surrounded by orbital paths and flowing scientific field lines in deep space" fetchpriority="high">
+</div>
 
 I’m interested in **multimodal AI**, **AI for science**, and **quantum algorithms**—especially where AI and quantum computing meet. At [IBM Research](https://research.ibm.com/), I’m exploring classical and quantum methods for scientific computing, with a focus on partial differential equations.
 

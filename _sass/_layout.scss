@@ -98,6 +98,10 @@ article > .clearfix {
   max-width: 48rem;
 }
 
+article > .clearfix:has(> .research-profile-art) {
+  max-width: none;
+}
+
 article > .clearfix p {
   margin-bottom: 1.15rem;
 }
@@ -136,7 +140,7 @@ article > h2,
   font-weight: 650;
 }
 
-article > .profile {
+.research-profile-art {
   background: #080815;
   border: 1px solid rgba(197, 26, 191, 0.22);
   border-radius: 16px;
@@ -147,8 +151,8 @@ article > .profile {
   width: 31%;
 }
 
-article > .profile img {
-  aspect-ratio: 4 / 5;
+.research-profile-art img {
+  aspect-ratio: 3 / 4;
   display: block;
   object-fit: cover;
   width: 100%;
@@ -309,7 +313,7 @@ footer.fixed-bottom {
     padding-top: 1.5rem;
   }
 
-  article > .profile {
+  .research-profile-art {
     float: none !important;
     margin: 0 auto 1.75rem;
     max-width: 320px;
