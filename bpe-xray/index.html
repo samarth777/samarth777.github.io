@@ -1,1779 +1,712 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BPE X-Ray Vision: Weight-Space Character Organs for Token-Blind LLMs</title>
-  <meta name="description" content="Compiling character-level perception straight out of tokenizer.json into a frozen LLM's weights: a zero-training 100% exact X-Ray ALU and a BPE-invariant Word Retina with 88–94% optical illusion fidelity.">
-  <meta property="og:title" content="BPE X-Ray Vision: Weight-Space Character Organs for Token-Blind LLMs">
-  <meta property="og:description" content="Two weight-space character organs auto-compiled from tokenizer.json: a 100% exact zero-training ALU and a continuous BPE-invariant Word Retina on a 100% frozen Qwen3-0.6B host.">
-  <meta property="og:image" content="https://samarth777.github.io/bpe-xray/figures/fig2_retina_vs_lora.png">
-  <meta property="og:type" content="article">
-  <meta name="twitter:card" content="summary_large_image">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BPE X-Ray Vision — Samarth P</title>
+<meta name="description" content="Compiling character-level perception out of tokenizer.json and grafting it into a frozen LLM: a zero-training exact X-Ray ALU and a BPE-invariant Word Retina.">
+<meta property="og:title" content="BPE X-Ray Vision: Weight-Space Character Organs for Token-Blind LLMs">
+<meta property="og:description" content="Every character of every BPE token is already in tokenizer.json. We compile it into weight space: an exact zero-training ALU, and a BPE-invariant retina for a 100% frozen Qwen3-0.6B.">
+<meta property="og:image" content="https://samarth777.github.io/bpe-xray/figures/fig2_retina_vs_lora.png">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --ink:#16181d; --ink-2:#4a4f59; --ink-3:#8a8f98; --rule:#e8e8ea; --soft:#f6f6f4;
+  --accent:#059669; --accent-ink:#047857; --accent-soft:#ecfdf5;
+  --lora:#d97706; --hit:#f97316;
+  --xr-bg:#0a0f14; --xr-panel:#0f171d; --xr-line:#1d2a33; --xr-ink:#d7e3ea; --xr-dim:#6f8593; --xr-glow:#5eead4;
+  --serif:'Source Serif 4',Georgia,serif; --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --col:680px; --wide:1040px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 19px/1.7 var(--serif);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:inherit;text-decoration:underline;text-decoration-color:#c9cbd0;text-underline-offset:3px;text-decoration-thickness:1px}
+a:hover{text-decoration-color:var(--accent);color:var(--accent-ink)}
+::selection{background:#bbf7d0}
+code{font-family:var(--mono);font-size:.82em;background:var(--soft);padding:.1em .35em;border-radius:4px;color:#23262d}
+strong{font-weight:600}
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
-    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}]});"></script>
+/* progress + nav */
+#progress{position:fixed;top:0;left:0;height:2px;width:0;background:var(--accent);z-index:50}
+.nav{max-width:var(--wide);margin:0 auto;padding:22px 24px;display:flex;justify-content:space-between;align-items:center;font:500 14px var(--sans)}
+.nav a{text-decoration:none;color:var(--ink-2)}
+.nav a:hover{color:var(--ink)}
+.nav .home{color:var(--ink);font-weight:600}
+.nav .links{display:flex;gap:22px}
 
-  <style>
-    :root {
-      --bg: #fcfcfb;
-      --surface: #ffffff;
-      --surface-soft: #f5f6f4;
-      --ink: #1a1a18;
-      --ink-muted: #52524e;
-      --ink-faint: #787771;
-      --border: #e5e5e0;
-      --border-strong: #d4d4cc;
-      --accent: #0f766e;
-      --accent-soft: #ecfdf5;
-      --accent-border: #a7f3d0;
-      --alu: #2563eb;
-      --alu-soft: #eff6ff;
-      --rose: #db2777;
-      --rose-soft: #fdf2f8;
-      --amber: #d97706;
-      --amber-soft: #fffbeb;
-      --code-bg: #14171c;
-      --code-ink: #e5e7eb;
-      --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
-      --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-      --radius: 10px;
-      --max-w: 760px;
-    }
+/* layout */
+article{max-width:var(--col);margin:0 auto;padding:0 24px 80px;position:relative}
+article>p,article>ul,article>ol{margin:0 0 1.15em}
+article li{margin-bottom:.4em}
+h1,h2,h3{font-family:var(--sans);letter-spacing:-.02em;color:var(--ink)}
+h2{font-size:28px;line-height:1.25;font-weight:700;margin:2.6em 0 .6em;scroll-margin-top:24px}
+h2 .num{color:var(--ink-3);font-weight:500;margin-right:.35em}
+h3{font-size:19px;line-height:1.35;font-weight:600;margin:2em 0 .5em;scroll-margin-top:24px}
+.wide{width:min(var(--wide),calc(100vw - 48px));position:relative;left:50%;transform:translateX(-50%)}
 
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+/* header */
+header.post{padding:56px 0 8px}
+.kicker{font:600 12.5px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:18px}
+h1{font-size:clamp(38px,6vw,58px);line-height:1.04;font-weight:700;letter-spacing:-.035em;margin:0 0 20px}
+h1 .x{background:linear-gradient(90deg,#059669,#14b8a6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.dek{font-size:22px;line-height:1.5;color:var(--ink-2);margin:0 0 28px}
+.byline{display:flex;flex-wrap:wrap;gap:6px 18px;font:400 14px var(--sans);color:var(--ink-3);padding:16px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.byline b{color:var(--ink);font-weight:600}
+.byline a{color:var(--ink-2)}
+.byline .sp{flex:1}
 
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: var(--serif);
-      font-size: 19px;
-      line-height: 1.72;
-      -webkit-font-smoothing: antialiased;
-    }
+/* x-ray panels (dark) */
+.xray{background:var(--xr-bg);color:var(--xr-ink);border-radius:14px;padding:28px 28px 22px;margin:40px 0;font-family:var(--sans);
+  background-image:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(94,234,212,.08),transparent 70%),linear-gradient(rgba(94,234,212,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(94,234,212,.035) 1px,transparent 1px);
+  background-size:auto,24px 24px,24px 24px}
+.xray .label{font:600 11px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--xr-dim)}
+.xray .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.xray input[type=text]{background:var(--xr-panel);border:1px solid var(--xr-line);color:var(--xr-ink);font:500 14px var(--mono);padding:7px 10px;border-radius:7px;outline:none}
+.xray input[type=text]:focus{border-color:var(--xr-glow)}
+.xbtn{background:transparent;border:1px solid var(--xr-line);color:var(--xr-ink);font:500 12.5px var(--sans);padding:6px 11px;border-radius:999px;cursor:pointer;transition:.15s}
+.xbtn:hover{border-color:var(--xr-dim)}
+.xbtn.on{background:var(--xr-glow);border-color:var(--xr-glow);color:#05201b}
+.xray .foot{margin-top:18px;padding-top:12px;border-top:1px solid var(--xr-line);font-size:12.5px;color:var(--xr-dim);line-height:1.55}
+.xray .foot code{background:transparent;color:var(--xr-ink);padding:0}
 
-    /* Reading progress bar */
-    #progress-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 3px;
-      width: 0%;
-      background: linear-gradient(90deg, var(--alu), var(--accent));
-      z-index: 1000;
-      transition: width 0.08s linear;
-    }
+/* hero tokens */
+.stage{display:flex;justify-content:center;flex-wrap:wrap;gap:14px;margin:30px 0 22px;min-height:118px;align-items:flex-start}
+.tok{position:relative;border:1px solid #2a3a44;background:#111b22;border-radius:10px;padding:14px 14px 10px;min-width:74px;text-align:center;transition:all .45s cubic-bezier(.2,.7,.2,1)}
+.tok .face{font:500 22px var(--mono);color:#e8f0f4;white-space:pre}
+.tok .id{font:500 11.5px var(--mono);color:var(--xr-dim);margin-top:6px}
+.tok .cells{display:none;gap:3px;justify-content:center}
+.tok .cells span{display:inline-flex;width:26px;height:34px;align-items:center;justify-content:center;font:600 18px var(--mono);border-radius:5px;background:rgba(94,234,212,.07);color:#bfe9e1;border:1px solid rgba(94,234,212,.18)}
+.tok .cells span.q{background:var(--hit);color:#1a0a00;border-color:var(--hit);box-shadow:0 0 14px rgba(249,115,22,.55)}
+.stage.on .tok{border-color:rgba(94,234,212,.55);box-shadow:0 0 0 1px rgba(94,234,212,.15),0 0 26px rgba(94,234,212,.12)}
+.stage.on .tok .face{display:none}
+.stage.on .tok .cells{display:flex}
+.scan{position:absolute;inset:0;border-radius:10px;overflow:hidden;pointer-events:none}
+.stage.on .scan::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-40%;background:linear-gradient(90deg,transparent,rgba(94,234,212,.35),transparent);animation:sweep 1.1s ease-out 1}
+@keyframes sweep{to{left:110%}}
+.readout{display:flex;justify-content:center;gap:34px;flex-wrap:wrap;font:500 13px var(--mono);color:var(--xr-dim)}
+.readout b{color:var(--xr-ink);font-weight:700}
+.readout .big b{color:var(--hit)}
 
-    /* Top minimal nav */
-    .topbar {
-      border-bottom: 1px solid var(--border);
-      background: rgba(252, 252, 251, 0.9);
-      backdrop-filter: blur(8px);
-      position: sticky;
-      top: 0;
-      z-index: 90;
-    }
-    .topbar-inner {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 12px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-family: var(--sans);
-      font-size: 13.5px;
-    }
-    .topbar-brand {
-      color: var(--ink);
-      text-decoration: none;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-    .topbar-brand:hover { color: var(--accent); }
-    .topbar-links {
-      display: flex;
-      gap: 18px;
-      align-items: center;
-    }
-    .topbar-links a {
-      color: var(--ink-muted);
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .topbar-links a:hover { color: var(--accent); }
+/* tldr + stats */
+.tldr{margin:44px 0 10px;padding:4px 0 4px 22px;border-left:3px solid var(--accent)}
+.tldr p{margin:0 0 .7em}
+.tldr p:last-child{margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);margin:36px 0 8px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.stat{padding:18px 16px 16px;border-left:1px solid var(--rule)}
+.stat:first-child{border-left:0;padding-left:0}
+.stat .n{font:700 27px/1.1 var(--sans);letter-spacing:-.03em}
+.stat .n.g{color:var(--accent)}
+.stat .l{font:400 12.5px/1.45 var(--sans);color:var(--ink-3);margin-top:6px}
 
-    /* Layout with optional sticky sidebar TOC */
-    .page-grid {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 48px 24px 96px;
-      display: grid;
-      grid-template-columns: 210px minmax(0, var(--max-w));
-      gap: 56px;
-      justify-content: center;
-    }
+/* side notes */
+.sn{font:400 13.5px/1.55 var(--sans);color:var(--ink-3)}
+@media (min-width:1280px){
+  .sn{float:right;clear:right;width:220px;margin-right:-260px;margin-top:.35em;position:relative}
+}
+@media (max-width:1279px){
+  .sn{display:block;margin:-.4em 0 1.2em;padding-left:14px;border-left:2px solid var(--rule)}
+}
 
-    aside.sidebar {
-      position: sticky;
-      top: 76px;
-      align-self: start;
-      font-family: var(--sans);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    .sidebar-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-faint);
-      margin-bottom: 10px;
-    }
-    .sidebar nav ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      border-left: 1px solid var(--border);
-    }
-    .sidebar nav li { margin: 0; }
-    .sidebar nav a {
-      display: block;
-      padding: 5px 0 5px 14px;
-      color: var(--ink-muted);
-      text-decoration: none;
-      border-left: 2px solid transparent;
-      margin-left: -1px;
-      transition: color 0.15s, border-color 0.15s;
-    }
-    .sidebar nav a:hover { color: var(--ink); }
-    .sidebar nav a.active {
-      color: var(--accent);
-      font-weight: 600;
-      border-left-color: var(--accent);
-    }
-    .sidebar nav li.sub a {
-      padding-left: 24px;
-      font-size: 12.2px;
-      color: var(--ink-faint);
-    }
-    .sidebar nav li.sub a.active { color: var(--accent); }
+/* toc */
+.toc{position:fixed;top:120px;width:190px;left:calc(50% - var(--col)/2 - 240px);font:400 13px/1.5 var(--sans);opacity:0;pointer-events:none;transition:opacity .3s}
+.toc.show{opacity:1;pointer-events:auto}
+.toc .t{font-weight:600;color:var(--ink);margin-bottom:10px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.toc a{display:block;text-decoration:none;color:var(--ink-3);padding:4px 0 4px 12px;border-left:1px solid var(--rule);transition:.15s}
+.toc a:hover{color:var(--ink)}
+.toc a.on{color:var(--ink);border-left-color:var(--accent)}
+@media (max-width:1279px){.toc{display:none}}
 
-    main.article {
-      min-width: 0;
-    }
+/* figures */
+figure{margin:40px 0}
+figure img{width:100%;display:block;border-radius:6px;cursor:zoom-in}
+figcaption{font:400 14px/1.55 var(--sans);color:var(--ink-2);max-width:var(--col);margin:14px auto 0;padding:0 24px}
+figcaption b{color:var(--ink)}
 
-    /* Hero header */
-    header.hero {
-      margin-bottom: 36px;
-      padding-bottom: 28px;
-      border-bottom: 1px solid var(--border);
-    }
-    .eyebrow {
-      font-family: var(--sans);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 10px;
-    }
-    h1 {
-      font-family: var(--sans);
-      font-size: clamp(2rem, 4vw, 2.7rem);
-      font-weight: 700;
-      line-height: 1.14;
-      letter-spacing: -0.03em;
-      margin: 0 0 14px;
-      color: var(--ink);
-    }
-    .subtitle {
-      font-family: var(--serif);
-      font-size: 1.24rem;
-      line-height: 1.5;
-      color: var(--ink-muted);
-      margin: 0 0 22px;
-    }
-    .meta-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 20px;
-      align-items: center;
-      font-family: var(--sans);
-      font-size: 13.5px;
-      color: var(--ink-muted);
-      margin-bottom: 18px;
-    }
-    .meta-row a {
-      color: var(--ink);
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .meta-row a:hover { color: var(--accent); text-decoration: underline; }
-    .pill-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      font-family: var(--sans);
-    }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 13px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 500;
-      text-decoration: none;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-      color: var(--ink);
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .pill:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--accent-soft);
-    }
-    .pill-primary {
-      background: var(--ink);
-      color: #fff;
-      border-color: var(--ink);
-    }
-    .pill-primary:hover {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
+/* code */
+pre{font-variant-ligatures:none;background:#0d1117;color:#d1d7e0;border-radius:10px;padding:18px 20px;overflow-x:auto;font:400 13.5px/1.65 var(--mono);margin:28px 0}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.k{color:#ff7b72}.f{color:#d2a8ff}.c{color:#8b949e;font-style:italic}.m{color:#79c0ff}.s{color:#a5d6ff}
 
-    /* Headings */
-    h2 {
-      font-family: var(--sans);
-      font-size: 1.52rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      line-height: 1.28;
-      margin: 2.5em 0 0.65em;
-      scroll-margin-top: 76px;
-      color: var(--ink);
-    }
-    h3 {
-      font-family: var(--sans);
-      font-size: 1.14rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      margin: 1.8em 0 0.5em;
-      scroll-margin-top: 76px;
-      color: var(--ink);
-    }
-    p { margin: 0 0 1.15em; }
-    ul, ol { margin: 0 0 1.2em; padding-left: 1.45em; }
-    li { margin-bottom: 0.45em; }
-    a { color: var(--accent); text-underline-offset: 3px; }
-    a:hover { color: #0b5d56; }
+/* tables */
+.tbl{overflow-x:auto;margin:30px 0}
+.tbl.wide{max-width:900px}
+.toc.show.hide{opacity:0;pointer-events:none}
+table{border-collapse:collapse;width:100%;font:400 14px/1.4 var(--sans);font-variant-numeric:tabular-nums}
+thead th{font-weight:600;color:var(--ink-2);text-align:left;padding:10px 10px;border-top:1.5px solid var(--ink);border-bottom:1px solid var(--ink);white-space:nowrap;font-size:12.5px}
+td{padding:9px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:last-child td{border-bottom:1.5px solid var(--ink)}
+td.r,th.r{text-align:right}
+tr.me td{background:var(--accent-soft)}
+tr.me td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.dim{color:var(--ink-3)}
+.arrow{color:var(--ink-3);margin:0 .25em}
+.tnote{font:400 13px/1.5 var(--sans);color:var(--ink-3);margin:-18px 0 28px}
 
-    /* Callout boxes */
-    .tldr {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--accent);
-      border-radius: var(--radius);
-      padding: 18px 22px;
-      margin: 0 0 28px;
-      font-size: 0.94em;
-      line-height: 1.65;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    }
-    .tldr-title {
-      font-family: var(--sans);
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--accent);
-      margin-bottom: 8px;
-    }
-    .finding {
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-border);
-      border-radius: var(--radius);
-      padding: 16px 20px;
-      margin: 1.6em 0;
-      font-size: 0.94em;
-      line-height: 1.62;
-    }
-    .finding strong.tag {
-      font-family: var(--sans);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--accent);
-      display: block;
-      margin-bottom: 5px;
-    }
-    .note-box {
-      background: var(--amber-soft);
-      border: 1px solid #fde68a;
-      border-radius: var(--radius);
-      padding: 15px 19px;
-      margin: 1.5em 0;
-      font-size: 0.92em;
-      line-height: 1.6;
-    }
-    .note-box strong.tag {
-      font-family: var(--sans);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #b45309;
-      display: block;
-      margin-bottom: 4px;
-    }
+/* callouts */
+.callout{margin:32px 0;padding:20px 24px;background:var(--soft);border-radius:10px}
+.callout .h{font:600 12px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:6px}
+.callout p{margin:0}
+.pull{font:500 24px/1.4 var(--sans);letter-spacing:-.02em;margin:36px 0;padding:0;color:var(--ink)}
 
-    /* Headline metric strip */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin: 24px 0 32px;
-      font-family: var(--sans);
-    }
-    .kpi {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 15px;
-    }
-    .kpi-num {
-      font-size: 1.48rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      line-height: 1.15;
-      color: var(--ink);
-    }
-    .kpi-num.em { color: var(--accent); }
-    .kpi-num.bl { color: var(--alu); }
-    .kpi-num.rs { color: var(--rose); }
-    .kpi-label {
-      font-size: 11.8px;
-      line-height: 1.38;
-      color: var(--ink-muted);
-      margin-top: 5px;
-    }
+/* attempt log */
+.attempts{margin:28px 0;border-top:1px solid var(--rule)}
+.att{display:grid;grid-template-columns:120px 1fr;gap:4px 20px;padding:18px 0;border-bottom:1px solid var(--rule)}
+.att .tag{font:600 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;padding-top:5px}
+.att .tag.no{color:#b91c1c}.att .tag.meh{color:var(--lora)}.att .tag.yes{color:var(--accent)}
+.att h4{font:600 16.5px var(--sans);margin:0 0 4px;letter-spacing:-.01em}
+.att p{margin:0;font-size:17px;color:var(--ink-2)}
+@media (max-width:640px){.att{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stat:nth-child(3){border-left:0;padding-left:0}}
 
-    /* Inline code & code blocks */
-    code {
-      font-family: var(--mono);
-      font-size: 0.82em;
-      background: var(--surface-soft);
-      border: 1px solid var(--border);
-      padding: 1px 5px;
-      border-radius: 4px;
-      color: #1f2937;
-    }
-    pre {
-      background: var(--code-bg);
-      color: var(--code-ink);
-      border-radius: var(--radius);
-      padding: 18px 20px;
-      overflow-x: auto;
-      font-family: var(--mono);
-      font-size: 13.2px;
-      line-height: 1.58;
-      margin: 1.4em 0;
-      border: 1px solid #262b35;
-    }
-    pre code {
-      background: none;
-      border: none;
-      padding: 0;
-      color: inherit;
-      font-size: inherit;
-    }
-    .kw { color: #93c5fd; }
-    .fn { color: #6ee7b7; }
-    .cm { color: #8b949e; font-style: italic; }
-    .st { color: #fcd34d; }
-    .nm { color: #f9a8d4; }
+/* inspector */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+@media (max-width:700px){.cols{grid-template-columns:1fr}}
+.pane{background:var(--xr-panel);border:1px solid var(--xr-line);border-radius:10px;padding:16px}
+.pane .label{display:flex;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0 16px;min-height:44px}
+.chip{font:500 15px var(--mono);padding:6px 9px;border-radius:6px;background:#15232b;border:1px solid #27404b;color:#e8f0f4;white-space:pre}
+.chip .q{color:var(--hit);font-weight:700}
+.seam{font:700 10px var(--mono);color:#05201b;background:var(--xr-glow);padding:2px 5px;border-radius:4px;margin:0 -2px}
+.hist{display:grid;grid-template-columns:repeat(26,1fr);gap:2px}
+.hist div{height:26px;border-radius:2px;background:#15232b;display:flex;align-items:flex-end;justify-content:center;font:500 9px var(--mono);color:var(--xr-dim);padding-bottom:1px;position:relative;overflow:hidden}
+.hist div i{position:absolute;left:0;right:0;bottom:0;background:var(--xr-glow);opacity:.85}
+.hist div.q i{background:var(--hit)}
+.hist div span{position:relative;z-index:1}
+.hist div.has span{color:#05201b;font-weight:700}
+.diff{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px 22px;font:500 12.5px var(--mono);color:var(--xr-dim)}
+.diff b{color:var(--xr-ink)}
+.diff .ok{color:var(--xr-glow)}
 
-    /* Trace terminal boxes (side-by-side comparison like WSM) */
-    .trace-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin: 1.4em 0 1.8em;
-      font-family: var(--mono);
-      font-size: 12.8px;
-      line-height: 1.55;
-    }
-    .trace-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-    }
-    .trace-card.good {
-      border-color: var(--accent-border);
-      background: #f7fdfb;
-    }
-    .trace-head {
-      font-family: var(--sans);
-      font-size: 11.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--ink-faint);
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-    }
-    .trace-card.good .trace-head { color: var(--accent); }
-    .tok {
-      display: inline-block;
-      padding: 1px 6px;
-      margin: 2px 2px;
-      border-radius: 5px;
-      font-family: var(--mono);
-      font-size: 12.5px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface-soft);
-    }
-    .tok.fire {
-      background: var(--alu-soft);
-      border-color: #93c5fd;
-      color: #1d4ed8;
-      font-weight: 600;
-    }
-    .tok.err {
-      background: #fef2f2;
-      border-color: #fecaca;
-      color: #b91c1c;
-      font-weight: 600;
-    }
-    .tok.ok {
-      background: var(--accent-soft);
-      border-color: var(--accent-border);
-      color: #065f46;
-      font-weight: 600;
-    }
+/* console */
+.term{background:var(--xr-panel);border:1px solid var(--xr-line);border-radius:10px;padding:18px 18px;font:500 15px/1.9 var(--mono);margin-top:16px;min-height:150px}
+.term .ln{white-space:pre-wrap;word-break:break-all}
+.term .p{color:#9fb3bf}
+.term .w{color:#05201b;background:var(--xr-glow);border-radius:3px;padding:0 1px}
+.term .cur{display:inline-block;width:8px;height:17px;background:var(--xr-glow);vertical-align:-3px;animation:blink 1s steps(1) infinite}
+.term .meta{font:400 12px var(--sans);color:var(--xr-dim);line-height:1.5}
+@keyframes blink{50%{opacity:0}}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.vs .pane{font:500 14px var(--mono)}
+.vs .out{font-size:30px;font-weight:700;margin-top:6px}
+.vs .bad{color:#f87171}.vs .good{color:var(--xr-glow)}
 
-    /* Figures */
-    figure {
-      margin: 2em -28px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px 16px 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    }
-    figure img {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 6px;
-      cursor: zoom-in;
-    }
-    figcaption {
-      font-family: var(--sans);
-      font-size: 13px;
-      line-height: 1.55;
-      color: var(--ink-muted);
-      margin-top: 12px;
-      padding: 0 4px;
-    }
-    figcaption strong { color: var(--ink); }
+/* illusion */
+.ill{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;margin-top:18px}
+@media (max-width:700px){.ill{grid-template-columns:1fr}.vs{grid-template-columns:1fr}}
+.prompt{font:500 14.5px/2 var(--mono);color:#b9c8d1}
+.prompt .t{border:1px solid #27404b;background:#15232b;border-radius:4px;padding:1px 4px;color:#e8f0f4}
+.prompt .t.pert{border-color:var(--hit);color:var(--hit)}
+.slider{display:flex;align-items:center;gap:14px;margin-top:18px}
+input[type=range]{flex:1;accent-color:var(--hit)}
+.pred{font:700 64px/1 var(--mono);margin:10px 0 6px}
+.pred.y{color:var(--xr-glow)}.pred.n{color:#f87171}
+.meter{height:6px;background:#15232b;border-radius:3px;overflow:hidden;margin-top:8px}
+.meter i{display:block;height:100%;background:var(--xr-glow);transition:width .4s}
 
-    /* Tables */
-    .table-wrap {
-      overflow-x: auto;
-      margin: 1.5em 0 1.8em;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: var(--sans);
-      font-size: 13.3px;
-      line-height: 1.45;
-    }
-    th, td {
-      padding: 9px 11px;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-      white-space: nowrap;
-    }
-    th {
-      background: var(--surface-soft);
-      font-weight: 600;
-      color: var(--ink);
-      font-size: 12.2px;
-    }
-    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-    tr:last-child td { border-bottom: none; }
-    tr.highlight { background: var(--accent-soft); }
-    tr.highlight td { font-weight: 600; }
-    .badge-frozen {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: #e0f2fe;
-      color: #0369a1;
-    }
-    .badge-adapt {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    /* Interactive widgets */
-    .widget {
-      background: var(--surface);
-      border: 1px solid var(--border-strong);
-      border-radius: 12px;
-      padding: 20px 22px;
-      margin: 1.8em 0 2.1em;
-      font-family: var(--sans);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.035);
-    }
-    .widget-header {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 14px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    .widget-title {
-      font-size: 14.5px;
-      font-weight: 700;
-      color: var(--ink);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .widget-badge {
-      font-size: 10.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      border: 1px solid var(--accent-border);
-    }
-    .widget-badge.rose {
-      background: var(--rose-soft);
-      color: var(--rose);
-      border-color: #fbcfe8;
-    }
-    .widget-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-    .widget input[type="text"] {
-      font-family: var(--mono);
-      font-size: 14px;
-      padding: 7px 12px;
-      border: 1px solid var(--border-strong);
-      border-radius: 7px;
-      background: var(--bg);
-      color: var(--ink);
-      width: 190px;
-    }
-    .widget input[type="text"]:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
-    }
-    .w-btn {
-      font-family: var(--sans);
-      font-size: 12.5px;
-      font-weight: 500;
-      padding: 6px 11px;
-      border-radius: 7px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-      color: var(--ink);
-      cursor: pointer;
-      transition: all 0.12s;
-    }
-    .w-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .w-btn.active {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
-    .w-btn.rose.active {
-      background: var(--rose);
-      border-color: var(--rose);
-      color: #fff;
-    }
-    .split-columns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-    .split-box {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-    }
-    .split-box h4 {
-      margin: 0 0 8px;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--ink-muted);
-      display: flex;
-      justify-content: space-between;
-    }
-    .token-chip {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 5px 9px;
-      margin: 3px;
-      border-radius: 7px;
-      border: 1px solid #cbd5e1;
-      background: #fff;
-      font-family: var(--mono);
-      font-size: 13px;
-    }
-    .token-chip .sub {
-      font-family: var(--sans);
-      font-size: 10px;
-      color: var(--ink-faint);
-      margin-top: 2px;
-    }
-    .seam-pill {
-      display: inline-block;
-      font-size: 10.5px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 999px;
-      background: #fef3c7;
-      color: #92400e;
-      margin: 0 2px;
-      vertical-align: middle;
-    }
-    .inv-bar {
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      font-size: 13px;
-    }
-    .inv-metrics {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      margin-top: 8px;
-      font-family: var(--mono);
-      font-size: 12.2px;
-    }
-    .inv-metrics span {
-      background: #fff;
-      border: 1px solid var(--accent-border);
-      padding: 3px 8px;
-      border-radius: 6px;
-    }
-
-    /* Optical illusion widget */
-    .slider-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin: 12px 0 16px;
-      flex-wrap: wrap;
-    }
-    .slider-row input[type="range"] {
-      flex: 1;
-      min-width: 180px;
-      accent-color: var(--rose);
-    }
-    .illusion-stage {
-      display: grid;
-      grid-template-columns: 1.25fr 1fr;
-      gap: 14px;
-      align-items: stretch;
-    }
-    .stage-panel {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      font-size: 13px;
-    }
-    .pred-big {
-      font-family: var(--mono);
-      font-size: 2.3rem;
-      font-weight: 700;
-      line-height: 1.1;
-      margin: 6px 0;
-    }
-    .pred-big.hit { color: var(--accent); }
-    .pred-big.miss { color: var(--ink-faint); }
-    .fid-meter {
-      height: 8px;
-      background: #e5e7eb;
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-    .fid-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--rose), var(--accent));
-      transition: width 0.25s ease;
-    }
-
-    /* Architecture diagram box */
-    .arch-diagram {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 20px;
-      margin: 1.5em 0;
-      overflow-x: auto;
-    }
-    .arch-diagram svg {
-      width: 100%;
-      max-width: 720px;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-    }
-
-    /* BibTeX */
-    .bib-wrap {
-      position: relative;
-    }
-    .copy-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-family: var(--sans);
-      font-size: 12px;
-      font-weight: 600;
-      padding: 5px 10px;
-      border-radius: 6px;
-      border: 1px solid #374151;
-      background: #1f2937;
-      color: #f3f4f6;
-      cursor: pointer;
-    }
-    .copy-btn:hover { background: var(--accent); border-color: var(--accent); }
-
-    /* Lightbox */
-    .lightbox {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.86);
-      z-index: 2000;
-      padding: 28px;
-      align-items: center;
-      justify-content: center;
-      cursor: zoom-out;
-    }
-    .lightbox.open { display: flex; }
-    .lightbox img {
-      max-width: 96vw;
-      max-height: 92vh;
-      background: #fff;
-      border-radius: 10px;
-      padding: 10px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
-    }
-
-    footer {
-      margin-top: 4em;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-      font-family: var(--sans);
-      font-size: 13.5px;
-      color: var(--ink-muted);
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    /* Responsive */
-    @media (max-width: 1040px) {
-      .page-grid {
-        grid-template-columns: minmax(0, var(--max-w));
-        padding-top: 32px;
-      }
-      aside.sidebar { display: none; }
-      figure { margin: 1.8em 0; }
-    }
-    @media (max-width: 680px) {
-      body { font-size: 17.5px; }
-      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-      .trace-grid, .split-columns, .illusion-stage { grid-template-columns: 1fr; }
-    }
-  </style>
+/* misc */
+hr.sep{border:0;text-align:center;margin:56px 0}
+hr.sep::before{content:"· · ·";color:var(--ink-3);letter-spacing:.5em}
+.files{list-style:none;padding:0;font-size:17px}
+.files li{padding:8px 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:230px 1fr;gap:16px}
+.files code{background:none;padding:0;font-size:13.5px}
+@media (max-width:640px){.files li{grid-template-columns:1fr;gap:0}}
+.bib{position:relative}
+.bib button{position:absolute;top:12px;right:12px;font:500 12px var(--sans);background:#1f2730;color:#d1d7e0;border:1px solid #30363d;border-radius:6px;padding:4px 10px;cursor:pointer}
+footer{max-width:var(--col);margin:0 auto;padding:28px 24px 60px;border-top:1px solid var(--rule);font:400 13.5px var(--sans);color:var(--ink-3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.lb{position:fixed;inset:0;background:rgba(255,255,255,.96);display:none;align-items:center;justify-content:center;z-index:100;cursor:zoom-out;padding:24px}
+.lb.open{display:flex}
+.lb img{max-width:100%;max-height:100%}
+details{margin:-12px 0 28px;font:400 14px var(--sans);color:var(--ink-2)}
+details summary{cursor:pointer;color:var(--ink-3)}
+</style>
 </head>
 <body>
-  <div id="progress-bar"></div>
+<div id="progress"></div>
 
-  <div class="topbar">
-    <div class="topbar-inner">
-      <a class="topbar-brand" href="https://samarth777.github.io/">Samarth P</a>
-      <div class="topbar-links">
-        <a href="https://samarth777.github.io/blog/">Writing</a>
-        <a href="https://github.com/samarth777/bpe-xray" target="_blank" rel="noopener">GitHub</a>
-        <a href="#bibtex">Cite</a>
-      </div>
+<nav class="nav">
+  <a class="home" href="https://samarth777.github.io/">Samarth P</a>
+  <div class="links">
+    <a href="https://samarth777.github.io/blog/">Writing</a>
+    <a href="https://github.com/samarth777/bpe-xray">Code</a>
+  </div>
+</nav>
+
+<aside class="toc" id="toc">
+  <div class="t">Contents</div>
+  <a href="#blind">Token blindness</a>
+  <a href="#alu">The exact ALU</a>
+  <a href="#retina">The word retina</a>
+  <a href="#causal">Does it really see?</a>
+  <a href="#limits">Limitations</a>
+  <a href="#code">Code &amp; citation</a>
+</aside>
+
+<article>
+<header class="post">
+  <div class="kicker">Weight-space organs</div>
+  <h1>BPE <span class="x">X-Ray</span> Vision</h1>
+  <p class="dek">Every character of every token is already sitting in <code>tokenizer.json</code>. We compile it into weight space and graft character perception onto a frozen LLM: first as an exact circuit that needs no training, then as a retina the model reads on its own.</p>
+  <div class="byline">
+    <span><b>Samarth P</b></span>
+    <span>November 25, 2026</span>
+    <span>12 min read</span>
+    <span class="sp"></span>
+    <a href="https://github.com/samarth777/bpe-xray">GitHub</a>
+    <a href="#cite">Cite</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="xray wide" id="hero" style="max-width:860px">
+  <div class="row" style="justify-content:space-between">
+    <span class="label">What Qwen3 sees</span>
+    <div class="row">
+      <input type="text" id="h-word" value="strawberry" list="h-list" size="14" aria-label="word" spellcheck="false">
+      <datalist id="h-list"><option>strawberry<option>mississippi<option>bookkeeper<option>chrysanthemum<option>raspberry<option>balloon<option>accommodation<option>committee</datalist>
+      <input type="text" id="h-letter" value="r" size="2" maxlength="1" aria-label="letter" style="text-align:center">
+      <button class="xbtn on" id="h-toggle">X-ray on</button>
     </div>
   </div>
-
-  <div class="page-grid">
-    <aside class="sidebar" aria-label="Table of contents">
-      <div class="sidebar-label">Contents</div>
-      <nav id="toc-nav">
-        <ul>
-          <li><a href="#problem">1. Why LLMs Can't Spell</a></li>
-          <li class="sub"><a href="#weight-bank">Compiling tokenizer.json</a></li>
-          <li class="sub"><a href="#xray-demo">Interactive X-Ray Demo</a></li>
-          <li><a href="#exact-alu">2. Implant #1: Exact X-Ray ALU</a></li>
-          <li class="sub"><a href="#alu-how">Read → Compute → Write</a></li>
-          <li class="sub"><a href="#alu-results">Cross-Model Results</a></li>
-          <li><a href="#word-retina">3. Implant #2: Word Retina</a></li>
-          <li class="sub"><a href="#failed-tries">Why Naive Injection Fails</a></li>
-          <li class="sub"><a href="#bpe-v2">The BPE-V2 Breakthrough</a></li>
-          <li class="sub"><a href="#retina-results">Frozen Host vs. Plain LoRA</a></li>
-          <li><a href="#causal-proofs">4. Proving the Model Sees</a></li>
-          <li class="sub"><a href="#illusion-lab">Interactive Illusion Lab</a></li>
-          <li class="sub"><a href="#stress-tests">BPE Stress Tests</a></li>
-          <li><a href="#limitations">5. Honest Limitations</a></li>
-          <li><a href="#reproduce">6. Code &amp; Citation</a></li>
-        </ul>
-      </nav>
-    </aside>
-
-    <main class="article">
-      <header class="hero">
-        <div class="eyebrow">Weight-Space Organs &middot; Mechanistic Engineering</div>
-        <h1>BPE X-Ray Vision: Weight-Space Character Organs for Token-Blind LLMs</h1>
-        <p class="subtitle">
-          Every character of every BPE token is already known inside <code>tokenizer.json</code>.
-          What happens when we compile character perception straight into a frozen LLM's weights—first as a zero-training exact circuit, and then as a continuous sensory retina?
-        </p>
-        <div class="meta-row">
-          <span>By <a href="https://samarth777.github.io/">Samarth P</a></span>
-          <span>&middot;</span>
-          <span>November 25, 2026</span>
-          <span>&middot;</span>
-          <span>12 min read</span>
-        </div>
-        <div class="pill-row">
-          <a class="pill pill-primary" href="https://github.com/samarth777/bpe-xray" target="_blank" rel="noopener">Code on GitHub</a>
-          <a class="pill" href="#xray-demo">Try X-Ray Inspector</a>
-          <a class="pill" href="#illusion-lab">Try Optical Illusion Lab</a>
-          <a class="pill" href="#bibtex">BibTeX</a>
-        </div>
-      </header>
-
-      <div class="tldr">
-        <div class="tldr-title">TL;DR</div>
-        Inspired by <a href="https://papail.io/papers/wsm/" target="_blank" rel="noopener">Weight-Space Micromachines</a>, we compile character-level perception straight out of <code>tokenizer.json</code> into frozen tensor lookup banks—with <strong>zero runtime tokenizer calls and zero Python string tools</strong>—and bolt two complementary organs onto frozen open-weight LLMs:
-        <ol style="margin-top:10px;margin-bottom:0;">
-          <li><strong>An Exact Weight-Space X-Ray ALU (0 training):</strong> A compiled pure-tensor circuit triggered by <code>[XRAY &lt;op&gt; | &lt;text&gt;]=</code>. It stays <strong>bit-for-bit identical</strong> on normal prose and jumps held-out 6-task accuracy from <strong>25% → 100%</strong> on <code>Qwen3-0.6B</code>, <strong>35% → 100%</strong> on <code>Qwen3-1.7B</code>, and <strong>30% → 99.7%</strong> on <code>SmolLM2-1.7B</code> (auto-compiled in 5–29 seconds).</li>
-          <li><strong>A Continuous BPE-Invariant Word Retina (<code>BPE-V2</code>, 0 tags, 0 CoT, 100% frozen host):</strong> After diagnosing why naive Layer-0 injection and generic mid-layer cross-attention fail, we compile a BPE-invariant word recurrence tapped into frozen layers <code>(16, 20, 24)</code> with <code>6.47M</code> params (nearly half of Plain LoRA's <code>11.35M</code>). It hits <strong>97.1%</strong> on perceptual character tasks (vs. 71.7% for Plain LoRA), <strong>73.3%</strong> on zero-shot OOD multi-word count (vs. 38.3%), with <strong>16&times; less prose perplexity drift</strong> (+0.31 vs. +5.08), a <strong>&minus;42.6 pt blindfold collapse</strong>, and <strong>88% (frozen) / 94% (+LoRA) optical illusion fidelity</strong> on 100% identical input text tokens.</li>
-        </ol>
-      </div>
-
-      <div class="kpi-grid">
-        <div class="kpi">
-          <div class="kpi-num bl">25% → 100%</div>
-          <div class="kpi-label">Exact X-Ray ALU on held-out real words (0 fine-tuning, bit-identical when silent)</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-num em">97.1%</div>
-          <div class="kpi-label">BPE-V2 perceptual accuracy on a 100% frozen host (vs. 71.7% Plain LoRA)</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-num rs">88% / 94%</div>
-          <div class="kpi-label">Optical illusion fidelity on identical text tokens (vs. 10% naive Layer-0)</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-num">+0.31 PPL</div>
-          <div class="kpi-label">Held-out prose drift on frozen host (16&times; cleaner than Plain LoRA's +5.08)</div>
-        </div>
-      </div>
-
-      <p>
-        There is a tiny, persistent embarrassment in modern language models. Ask a frontier transformer to prove a theorem and it sails through; ask it how many <code>r</code>'s are in <code>strawberry</code>, whether an unseen word contains a double letter straddling a subword boundary, or to reverse <code>chrysanthemum</code> without spelling it out loud first, and it suddenly guesses like a sleep-deprived undergrad.
-      </p>
-      <p>
-        We all know the culprit: <strong>Byte-Pair Encoding (BPE)</strong>. When <code>Qwen3-0.6B-Base</code> reads <code>strawberry</code>, Layer 0 never sees ten characters. It sees three opaque integer IDs: <code>[496, 675, 15717]</code>—corresponding to <code>"str"</code>, <code>"aw"</code>, and <code>"berry"</code>. To count the <code>r</code>'s, the model has to have memorized the spelling of all 151,936 vocabulary tokens inside its MLP weights and then mentally sum across arbitrary subword seams.
-      </p>
-      <p>
-        Today, there are two standard ways to paper over this: let the model burn dozens of chain-of-thought tokens spelling the word out letter-by-letter, or wrap the model in an external Python sandbox. Both work—and both treat character blindness as an inescapable fact of life.
-      </p>
-      <p>
-        Wait: <em>why is it inescapable?</em>
-      </p>
-      <p>
-        Every single character inside every single BPE token is <strong>already known statically at model-build time</strong> inside <code>tokenizer.json</code>. Reading Dimitris Papailiopoulos's <a href="https://papail.io/papers/wsm/" target="_blank" rel="noopener">Weight-Space Micromachines</a>—where small exact circuits ("brain implants") are compiled straight into weight space and bolted onto a frozen LLM—one question jumped out immediately:
-      </p>
-      <p>
-        <strong>Can we compile character-level vision straight out of <code>tokenizer.json</code> and graft it directly into a frozen LLM's weights?</strong>
-      </p>
-      <p>
-        This post walks through what happened when we built two such organs, the two plausible architectures that failed along the way, the single ablation clue that cracked the continuous version open, and the causal tests we ran to prove the model is actually <em>seeing</em> through its implant rather than memorizing shortcuts.
-      </p>
-
-      <!-- SECTION 1 -->
-      <h2 id="problem">1. Why LLMs Are Blind to Characters (and Why They Don't Have to Be)</h2>
-
-      <p>
-        Before building anything, we built a strictly <strong>word-disjoint benchmark</strong> (<code>src/benchmarks.py</code>): 418 training words, 162 held-out real English words (including classics like <code>strawberry</code>, <code>mississippi</code>, and <code>chrysanthemum</code>), freshly generated unseen nonce pseudowords, compressed <em>Compound BPE</em> pseudowords (random pairs of 4–7 character BPE chunks glued into \(\le 3\) tokens), pure <em>Cross-BPE Double Letters</em> (where the only double letter in a word sits strictly across a token boundary), plus two zero-shot out-of-distribution tasks never shown during training (<em>multi-word letter count</em> and <em>anagram detection</em>).
-      </p>
-      <p>
-        On this benchmark, frozen <code>Qwen3-0.6B-Base</code> scores <strong>19.1%</strong> zero-shot across 7 tasks (<strong>25.0%</strong> 2-shot across 6 tasks)—and a flat <strong>0.0%</strong> on both <code>reverse</code> and <code>rot13</code>. It isn't dumb; it simply lacks a sensory organ for sub-token characters.
-      </p>
-
-      <h3 id="weight-bank">Compiling <code>tokenizer.json</code> into a Frozen Weight Bank</h3>
-
-      <p>
-        Notice that a tokenizer defines a finite lookup map from token ID \(v \in \{0, \dots, V-1\}\) to a short byte string. We only ever need to inspect <code>tokenizer.json</code> <em>once</em>, offline, to compile a frozen <code>CharWeightBank</code> (<code>src/char_tables.py</code>) of weight-space embedding tables:
-      </p>
-      <ul>
-        <li><code>E_hist</code> \([V, 26]\): exact case-insensitive counts of <code>a..z</code> inside every token (just <strong>7.9 MB</strong> in bf16 for Qwen's 151,936-token vocabulary).</li>
-        <li><code>E_alpha_chars</code> \([V, 16]\): exact letter IDs \(1..26\) in order inside each token, plus <code>E_alpha_len</code> \([V]\).</li>
-        <li><code>F_retina</code> \([V, 358]\): a rich per-token sensory bank containing the 26-d letter histogram, first/last letter one-hots, first-5 and last-5 character one-hots, raw/alpha length, leading-space flag, internal double-letter flag, and case/digit indicators (108.8 MB in bf16).</li>
-      </ul>
-      <p>
-        Once compiled (taking <strong>5.2s</strong> on <code>SmolLM2</code> and <strong>12–29s</strong> on <code>Qwen3</code>), <strong>the tokenizer is never called again</strong>. At inference time, looking up a token's character anatomy is literally an embedding lookup—<code>F_retina[input_ids]</code>—inside the PyTorch forward pass.
-      </p>
-
-      <!-- INTERACTIVE WIDGET 1 -->
-      <div class="widget" id="xray-demo">
-        <div class="widget-header">
-          <div class="widget-title">
-            Interactive BPE X-Ray Inspector
-            <span class="widget-badge">Live Algebra</span>
-          </div>
-          <span style="font-size:12px;color:var(--ink-faint);">Same bytes, different BPE splits &rarr; exact 0.0-diff retina state</span>
-        </div>
-
-        <div class="widget-controls">
-          <input id="xray-word" type="text" value="strawberry" maxlength="16" aria-label="Word to inspect">
-          <span style="font-size:12.5px;color:var(--ink-muted);">Query letter:</span>
-          <input id="xray-letter" type="text" value="r" maxlength="1" style="width:46px;text-align:center;" aria-label="Query letter">
-          <button class="w-btn" data-preset="strawberry,r">strawberry</button>
-          <button class="w-btn" data-preset="mississippi,s">mississippi</button>
-          <button class="w-btn" data-preset="bookkeeper,e">bookkeeper</button>
-          <button class="w-btn" data-preset="chrysanthemum,h">chrysanthemum</button>
-          <button class="w-btn" id="xray-resplit" style="margin-left:auto;border-color:var(--alu);color:var(--alu);">Re-roll Random Split</button>
-        </div>
-
-        <div class="split-columns">
-          <div class="split-box">
-            <h4>Canonical BPE Tokenization <span id="canon-count"></span></h4>
-            <div id="canon-tokens"></div>
-          </div>
-          <div class="split-box">
-            <h4>Adversarial Random BPE Split <span id="adv-count"></span></h4>
-            <div id="adv-tokens"></div>
-          </div>
-        </div>
-
-        <div class="inv-bar">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
-            <strong style="color:#065f46;">WordRetinaScanner Fused Output (623 dims)</strong>
-            <span style="font-family:var(--mono);font-size:12px;color:#047857;font-weight:700;">max |S_canonical &minus; S_adversarial| = 0.000000</span>
-          </div>
-          <div class="inv-metrics" id="xray-metrics"></div>
-        </div>
-      </div>
-
-      <!-- SECTION 2 -->
-      <h2 id="exact-alu">2. Implant #1: An Exact Weight-Space Character ALU (Zero Fine-Tuning)</h2>
-
-      <p>
-        First, we built the exact WSM-style organ (<code>src/xray_alu.py</code>): a pure-tensor character ALU hooked directly onto the frozen host's final RMSNorm (<code>model.model.norm</code>). Not a single weight of the base LLM is trained.
-      </p>
-      <p>
-        The design follows the exact three-stage recipe from Weight-Space Micromachines—<strong>Read, Compute, Write</strong>—with one strict contract: <strong>when no <code>[XRAY ...]=</code> span is open, the hook returns the original hidden state untouched</strong>, guaranteeing bit-for-bit identical logits on normal prose and on every token generated before the trigger closes.
-      </p>
-
-      <h3 id="alu-how">How It Works: Read &rarr; Compute &rarr; Write</h3>
-
-      <div class="arch-diagram">
-        <svg viewBox="0 0 720 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="X-Ray ALU pipeline diagram">
-          <defs>
-            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b"/>
-            </marker>
-          </defs>
-          <!-- Host model lane -->
-          <rect x="10" y="14" width="142" height="44" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
-          <text x="81" y="33" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1e293b">Token IDs</text>
-          <text x="81" y="48" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#64748b">[XRAY count r | str..]=</text>
-
-          <line x1="152" y1="36" x2="196" y2="36" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
-
-          <rect x="200" y="14" width="235" height="44" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
-          <text x="317" y="33" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1e293b">Frozen Host LLM (0 weights changed)</text>
-          <text x="317" y="48" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#64748b">28 transformer layers &rarr; final RMSNorm</text>
-
-          <line x1="435" y1="36" x2="508" y2="36" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
-
-          <!-- Parallel ALU lane -->
-          <path d="M 81 58 L 81 106 L 122 106" fill="none" stroke="#2563eb" stroke-width="1.7" marker-end="url(#arr)"/>
-
-          <rect x="126" y="80" width="146" height="52" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="199" y="101" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="700" fill="#1d4ed8">1. Read (Weight Bank)</text>
-          <text x="199" y="117" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#3b82f6">E_hist, E_alpha_chars</text>
-
-          <line x1="272" y1="106" x2="306" y2="106" stroke="#2563eb" stroke-width="1.7" marker-end="url(#arr)"/>
-
-          <rect x="310" y="80" width="180" height="52" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
-          <text x="400" y="101" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="700" fill="#1d4ed8">2. Compute (Pure Tensor)</text>
-          <text x="400" y="117" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9.3" fill="#3b82f6">Prefix sums &bull; ReLU &bull; ROT13</text>
-
-          <path d="M 490 106 L 525 106 L 525 56" fill="none" stroke="#2563eb" stroke-width="1.7" marker-end="url(#arr)"/>
-
-          <!-- Addition node -->
-          <circle cx="525" cy="36" r="14" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.8"/>
-          <text x="525" y="41" text-anchor="middle" font-family="Inter,sans-serif" font-size="16" font-weight="700" fill="#0f766e">+</text>
-          <text x="562" y="100" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#0f766e">3. Write (active=1)</text>
-          <text x="562" y="114" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9.3" fill="#047857">&gamma; &middot; W_write[tok]</text>
-
-          <line x1="539" y1="36" x2="584" y2="36" stroke="#64748b" stroke-width="1.6" marker-end="url(#arr)"/>
-
-          <rect x="588" y="14" width="122" height="44" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
-          <text x="649" y="33" text-anchor="middle" font-family="Inter,sans-serif" font-size="11.5" font-weight="600" fill="#1e293b">lm_head</text>
-          <text x="649" y="48" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#0f766e">exact next token</text>
-        </svg>
-      </div>
-
-      <p>
-        Every piece of the Compute stage is standard differentiable tensor algebra:
-      </p>
-      <ul>
-        <li><strong>Span parsing:</strong> Vocabulary indicator vectors detect <code>[XRAY</code>, the operation (<code>count</code>, <code>len</code>, <code>nth</code>, <code>spell</code>, <code>reverse</code>, <code>rot13</code>), optional argument, <code>|</code>, and <code>]=</code> via lower-triangular prefix sums.</li>
-        <li><strong>Exact ReLU digit extraction:</strong> For <code>count</code> and <code>len</code>, summing <code>E_hist[ids]</code> or <code>E_alpha_len[ids]</code> over the span produces an integer \(n \in [0, 999]\). A tiny 3-layer ReLU piecewise-linear circuit (<code>ReLUDigitExtractor</code>, verified 100% exact on all integers \(0\text{--}999\)) pulls out the exact hundreds, tens, and ones digits—no Python <code>str(n)</code> anywhere:</li>
-      </ul>
-
-<pre><code><span class="kw">def</span> <span class="fn">relu_step</span>(x, threshold):
-    <span class="cm"># Exact 0/1 indicator for integers: 1 iff x >= threshold</span>
-    <span class="kw">return</span> F.relu(x - (threshold - <span class="nm">1.0</span>)) - F.relu(x - threshold)
-
-<span class="kw">def</span> <span class="fn">relu_eq_int</span>(x, k):
-    <span class="cm"># Exact 0/1 indicator for integers: 1 iff x == k</span>
-    <span class="kw">return</span> F.relu(<span class="nm">1.0</span> - torch.abs(x - k))
-
-<span class="cm"># Hundreds & tens digits via pure ReLU staircase sums (exact on all ints 0..999)</span>
-d_hundreds = sum(relu_step(n, <span class="nm">100.0</span> * c) <span class="kw">for</span> c <span class="kw">in</span> range(<span class="nm">1</span>, <span class="nm">10</span>))
-rem100     = n - <span class="nm">100.0</span> * d_hundreds
-d_tens     = sum(relu_step(rem100, <span class="nm">10.0</span> * c) <span class="kw">for</span> c <span class="kw">in</span> range(<span class="nm">1</span>, <span class="nm">10</span>))
-d_ones     = rem100 - <span class="nm">10.0</span> * d_tens</code></pre>
-
-      <ul>
-        <li><strong>Character-level indexing &amp; ROT13:</strong> For <code>nth</code>, <code>spell</code>, <code>reverse</code>, and <code>rot13</code>, cumulative token lengths plus <code>relu_eq_int</code> select the exact token and intra-token slot for character position \(k\) (or \(N - 1 - k\) for <code>reverse</code>). ROT13 is simply a fixed \(26 \times 26\) cyclic shift matrix multiplying the one-hot letter vector.</li>
-        <li><strong>Solved write directions (<code>W_write</code>):</strong> For each output token \(t \in \{\text{'0'}..\text{'9'}, \text{'a'}..\text{'z'}, \text{'-'}, \text{'\n'}\}\), we solve a unit-norm direction in post-RMSNorm space using <code>lm_head.weight</code> so adding \(\gamma W_{\text{write}}[t]\) makes \(t\) the deterministic argmax.</li>
-      </ul>
-
-      <p>
-        Here is what happens on a live generation trace from <code>Qwen3-0.6B-Base</code> with zero fine-tuning:
-      </p>
-
-      <div class="trace-grid">
-        <div class="trace-card">
-          <div class="trace-head"><span>Frozen Qwen3-0.6B (Plain)</span><span>Wrong</span></div>
-          <div>Prompt: <code>[XRAY count r | strawberry]=</code></div>
-          <div style="margin-top:8px;">Output: <span class="tok err">2</span> <span class="tok">\n</span></div>
-          <div style="margin-top:10px;font-family:var(--sans);font-size:12px;color:var(--ink-faint);">Base model guesses 2 from opaque tokens <code>["str","aw","berry"]</code>.</div>
-        </div>
-        <div class="trace-card good">
-          <div class="trace-head"><span>+ Exact Weight-Space X-Ray ALU</span><span>Exact (0 train)</span></div>
-          <div>Prompt: <code>[XRAY count r | strawberry]=</code></div>
-          <div style="margin-top:8px;">Output: <span class="tok ok">3</span> <span class="tok fire">\n</span></div>
-          <div style="margin-top:10px;font-family:var(--sans);font-size:12px;color:#047857;">ALU fires for 2 steps, then drops to exact 0.0 (bit-identical prose).</div>
-        </div>
-      </div>
-
-      <h3 id="alu-results">Cross-Model Results: Auto-Compiled Across Families in Seconds</h3>
-
-      <p>
-        To test whether this is a one-off hack or a portable compiler, we ran the exact same compiler script on three models spanning two architectures and two completely different tokenizers: <code>Qwen3-0.6B-Base</code>, <code>Qwen3-1.7B-Base</code>, and <code>HuggingFaceTB/SmolLM2-1.7B</code>. We evaluated each model with just <strong>2-shot in-context examples</strong> (teaching the <code>[XRAY ...]=</code> tag format in the prompt, zero gradient steps) plus a direct-circuit check on all 13 evaluation suites.
-      </p>
-
-      <figure>
-        <img src="figures/fig1_alu_hero.png" alt="Exact Weight-Space BPE X-Ray ALU results across 6 tasks on held-out real and nonce words" loading="lazy">
-        <figcaption>
-          <strong>Figure 1. Exact Weight-Space BPE X-Ray ALU (zero fine-tuning).</strong> On <code>Qwen3-0.6B-Base</code> with 2-shot ICL only, held-out real-word accuracy jumps from 25.0% to <strong>100.0%</strong> across all 6 tasks—including 0%&rarr;100% on <code>reverse</code> and <code>rot13</code>. The same compiler transfers automatically to <code>Qwen3-1.7B</code> and <code>SmolLM2-1.7B</code> directly from <code>tokenizer.json</code>.
-        </figcaption>
-      </figure>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Model</th>
-              <th class="num">Compile</th>
-              <th>Prose Bit-Identical</th>
-              <th class="num">Real (6-task)</th>
-              <th class="num">Nonce (6-task)</th>
-              <th class="num">Multi-Word Count</th>
-              <th class="num">Direct Circuit</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>Qwen3-0.6B-Base</code></td>
-              <td class="num">28.8 s</td>
-              <td><span class="badge-frozen">True</span></td>
-              <td class="num">25.0% &rarr; <strong>100.0%</strong></td>
-              <td class="num">22.3% &rarr; <strong>92.0%</strong></td>
-              <td class="num">28.0% &rarr; <strong>100.0%</strong></td>
-              <td class="num"><strong>100.0%</strong></td>
-            </tr>
-            <tr>
-              <td><code>Qwen3-1.7B-Base</code></td>
-              <td class="num">12.6 s</td>
-              <td><span class="badge-frozen">True</span></td>
-              <td class="num">34.7% &rarr; <strong>100.0%</strong></td>
-              <td class="num">29.3% &rarr; <strong>93.0%</strong></td>
-              <td class="num">34.0% &rarr; <strong>100.0%</strong></td>
-              <td class="num"><strong>100.0%</strong></td>
-            </tr>
-            <tr>
-              <td><code>SmolLM2-1.7B</code></td>
-              <td class="num">5.2 s</td>
-              <td><span class="badge-frozen">True</span></td>
-              <td class="num">29.7% &rarr; <strong>99.7%</strong></td>
-              <td class="num">18.3% &rarr; <strong>94.7%</strong></td>
-              <td class="num">30.0% &rarr; <strong>100.0%</strong></td>
-              <td class="num"><strong>100.0%</strong></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p>
-        One small detail worth noting: why is 2-shot ICL on unseen nonce words 92–95% while the direct circuit is <strong>100.0%</strong>? Because under zero-training 2-shot prompting, the base model occasionally typos a weird pseudoword like <code>xqzvplk</code> while copying it into the <code>[XRAY ...]=</code> tag <em>before</em> the ALU ever fires. Once the tag closes, the ALU itself makes <strong>zero mistakes</strong> across all 13 suites on all 3 models.
-      </p>
-
-      <!-- SECTION 3 -->
-      <h2 id="word-retina">3. Implant #2: Giving a Frozen LLM Continuous Character Intuition</h2>
-
-      <p>
-        The ALU is clean, exact, and requires zero training—but it still behaves like a built-in coprocessor that you invoke with a tag (<code>[XRAY ...]=</code>). We wanted to push further and ask a harder question:
-      </p>
-      <p>
-        <strong>Can a 100% frozen LLM answer ordinary natural-language character questions directly—no tags, no tool syntax, no chain-of-thought tokens—just by <em>seeing</em> through a continuous weight-space retina?</strong>
-      </p>
-      <p>
-        For example: the prompt is literally <code>How many times does the letter 'r' appear in 'strawberry'?\nAnswer:</code>, and the very next token emitted is <code>3</code>.
-      </p>
-
-      <h3 id="failed-tries">Why Our First Two Attempts Failed (and the Clue That Cracked It)</h3>
-
-      <p>
-        Getting this to actually work—and not just accidentally train a glorified LoRA that ignores the retina—took three architectural iterations on <code>Qwen3-0.6B-Base</code> (trained on 4,096 strictly word-disjoint examples across 7 tasks: <code>count</code>, <code>length</code>, <code>nth</code>, <code>double</code>, <code>delete</code>, <code>replace</code>, <code>reverse</code>).
-      </p>
-
-      <ul>
-        <li>
-          <strong>Attempt 1 — Naive Layer-0 Retina + LoRA (<code>src/xray_retina.py</code>):</strong>
-          The most obvious idea: project <code>F_retina[input_ids]</code> and add it straight into Layer-0 token embeddings alongside a rank-16 LoRA (10.81M params total), matched against a Plain LoRA baseline (rank-18, 11.35M params, no retina).<br>
-          <em>Result:</em> <strong>Complete bust.</strong> Naive Layer-0 Retina + LoRA scored <strong>47.9%</strong> real / <strong>58.1%</strong> nonce—actually <em>worse</em> than Plain LoRA alone (<strong>49.5%</strong> / <strong>60.7%</strong>). Even worse, when we <em>blindfolded</em> the retina at test time (setting its scale to <code>0.0</code>), accuracy barely budged (<strong>&minus;2.4 pts</strong>), and our optical illusion test hit just <strong>10%</strong>. At Layer 0, the token <code>"berry"</code> has no idea what question is being asked, and LoRA finds it easier to memorize token spellings in host weights than to route a foreign Layer-0 vector cleanly through 28 frozen attention layers.
-        </li>
-        <li>
-          <strong>Attempt 2 — Generic Mid-Layer Cross-Attention (<code>BPE-V1</code>, <code>src/visual_cortex.py</code>):</strong>
-          Instead of injecting at Layer 0, we attached cross-attention taps at mid/late layers <code>(14, 20, 24)</code> where the residual stream already represents the question ("how many <code>'r'</code>s?").<br>
-          <em>Result:</em> On a frozen host, <code>v1_frozen</code> improved blindfold dependence (<strong>&minus;17.1 pts</strong>), yet overall real-word accuracy stalled at <strong>35.0%</strong> and optical illusion fidelity was still just <strong>16%</strong>. Generic cross-attention had to re-learn multi-token character aggregation from scratch from only 4,096 examples.<br>
-          <strong>Wait—one number in <code>v1_lora</code> lit up like a flare:</strong> on <em>Pure Cross-BPE Double Letters</em> (a feature we had already pre-computed cleanly across adjacent token seams), <code>v1_lora</code> jumped to <strong>78.8%</strong>—and plummeted <strong>&minus;30.0 pts</strong> when blindfolded!
-        </li>
-      </ul>
-
-      <div class="note-box">
-        <strong class="tag">The Key Diagnosis</strong>
-        The host LLM wasn't refusing to use the sensory organ—it just couldn't learn subword-to-word character aggregation inside a tiny generic adapter from 4k samples. The moment a feature was <em>already invariant to BPE splits</em> (like cross-token double letters), the model latched onto it immediately.
-      </div>
-
-      <h3 id="bpe-v2">Attempt 3: The <code>BPE-V2</code> Weight-Space Word Retina</h3>
-
-      <p>
-        That diagnosis immediately suggested the right division of labor: <strong>compile what is algebraically invariant, and learn only the readout interface into the frozen host.</strong>
-      </p>
-      <p>
-        In <code>src/word_retina.py</code>, <code>WordRetinaScanner</code> runs a causal, pure-tensor gated linear recurrence directly over <code>F_retina[input_ids]</code> and <code>E_alpha_chars[input_ids]</code>. As subword tokens stream by inside a quoted target span, it accumulates:
-      </p>
-      <ul>
-        <li>Exact word-level letter histogram \(h \in \mathbb{R}^{26}\) and exact word length \(L\).</li>
-        <li>Exact cross-token seam double-letter detection via a single dot product between the previous token's last letter and the current token's first letter: <code>(prev_last * first_a).sum(-1)</code>.</li>
-        <li>Exact placed character grid \(G \in \{0,1\}^{16 \times 26}\) indexed by cumulative character offset using <code>relu_eq_int</code>.</li>
-        <li>Exact invariant query readouts—<code>matched_cnt = (w_hist * q_letter).sum(-1)</code>, <code>matched_nth</code>, and <code>is_anagram</code>—concatenated into a 623-dim sensory stream \(S_t\).</li>
-      </ul>
-
-<pre><code><span class="cm"># Core of WordRetinaScanner (pure tensor algebra, 0 tokenizer/string ops)</span>
-cross_dbl = (st[<span class="st">"prev_last"</span>] * fa_t).sum(dim=-<span class="nm">1</span>) * st[<span class="st">"prev_has_alpha"</span>] * (<span class="nm">1.0</span> - ls)
-pos_idx   = st[<span class="st">"sp_len"</span>].unsqueeze(<span class="nm">1</span>) + self.slot_offsets    <span class="cm"># [B, L_max]</span>
-slot_mask = relu_eq_int(self.pos_grid, pos_idx.unsqueeze(<span class="nm">1</span>)) <span class="cm"># [B, 16, L_max]</span>
-placed    = torch.einsum(<span class="st">"bgl,blc->bgc"</span>, slot_mask, tok_oh)  <span class="cm"># [B, 16, 26]</span>
-
-st[<span class="st">"sp_hist"</span>]  = st[<span class="st">"sp_hist"</span>]  + a1 * h_t
-st[<span class="st">"sp_len"</span>]   = st[<span class="st">"sp_len"</span>]   + active * al
-st[<span class="st">"sp_dbl"</span>]   = torch.clamp(st[<span class="st">"sp_dbl"</span>] + active * (idbl_t + cross_dbl), <span class="nm">0</span>, <span class="nm">1</span>)
-st[<span class="st">"sp_chars"</span>] = st[<span class="st">"sp_chars"</span>] + a1.unsqueeze(-<span class="nm">1</span>) * placed</code></pre>
-
-      <p>
-        We verified this recurrence on CPU before training a single step: between canonical <code>["str", "aw", "berry"]</code> and adversarial <code>["s", "traw", "ber", "ry"]</code>, the maximum absolute difference across all 623 sensory dimensions is <strong>exact <code>0.0</code></strong>.
-      </p>
-      <p>
-        To feed \(S_t\) into a <strong>100% frozen</strong> <code>Qwen3-0.6B-Base</code> without disrupting its language modeling, we attach three lightweight SwiGLU-style bilinear residual taps (<code>LatentIntuitionTap</code>) at layers <code>(16, 20, 24)</code>—totaling just <strong>6.47M trainable parameters</strong> (57% of Plain LoRA's budget). Each tap's output projection <code>o_proj</code> is initialized to <strong>exact zero</strong> (verified bit-for-bit identical at step 0), and we add a small KL-divergence anchor on random prose batches during training so untouched text keeps untouched logits:
-      </p>
-      <p style="text-align:center;">
-        $$h_\ell' = h_\ell + \alpha \cdot W_{\text{out}}\!\Big(\mathrm{SiLU}\!\big(W_{g2}\,\tilde{h}_\ell\big) \odot W_{\text{mix}}\!\big(\mathrm{SiLU}(W_{g1}\,\tilde{h}_\ell) \odot W_s S_t\big)\Big)$$
-      </p>
-
-      <h3 id="retina-results">Results: 100% Frozen Host + <code>BPE-V2</code> vs. Plain LoRA</h3>
-
-      <figure>
-        <img src="figures/fig2_retina_vs_lora.png" alt="Sample efficiency and per-task accuracy comparing BPE-V2 Word Retina on a frozen host against Plain LoRA" loading="lazy">
-        <figcaption>
-          <strong>Figure 2. BPE-V2 Word Retina on a 100% frozen Qwen3-0.6B host vs. Plain LoRA (0 CoT, 0 tool tags).</strong>
-          <em>Left:</em> Sample efficiency from 128 to 4,096 examples (strictly word-disjoint). At just 2,048 examples and 6.5M params, <code>BPE-V2 (Frozen)</code> already beats 4,096-example Plain LoRA (11.4M params).
-          <em>Right:</em> Per-task breakdown at \(n=4{,}096\), revealing a sharp split between single-pass perceptual/OOD tasks (73–100%) and multi-token string edits.
-        </figcaption>
-      </figure>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Architecture (<code>Qwen3-0.6B</code>, \(n=4096\))</th>
-              <th class="num">Params</th>
-              <th>Host</th>
-              <th class="num">Real (4 Perc.*)</th>
-              <th class="num">Real (All 7)</th>
-              <th class="num">Nonce (All 7)</th>
-              <th class="num">Compound BPE</th>
-              <th class="num">Cross-Double</th>
-              <th class="num">OOD Multi-Cnt</th>
-              <th class="num">OOD Anagram</th>
-              <th class="num">Prose &Delta;PPL</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Frozen Base</td>
-              <td class="num">0</td>
-              <td><span class="badge-frozen">Frozen</span></td>
-              <td class="num">33.3%</td>
-              <td class="num">19.1%</td>
-              <td class="num">10.7%</td>
-              <td class="num">&mdash;</td>
-              <td class="num">50.0%</td>
-              <td class="num">25.0%</td>
-              <td class="num">38.3%</td>
-              <td class="num">0.00</td>
-            </tr>
-            <tr>
-              <td>Plain LoRA (<code>r=18</code>)</td>
-              <td class="num">11.35M</td>
-              <td><span class="badge-adapt">LoRA</span></td>
-              <td class="num">71.7%</td>
-              <td class="num">49.5%</td>
-              <td class="num">60.7%</td>
-              <td class="num">64.4% / 44.3%</td>
-              <td class="num">70.0%</td>
-              <td class="num">38.3%</td>
-              <td class="num">58.3%</td>
-              <td class="num">+5.08</td>
-            </tr>
-            <tr>
-              <td>Naive Layer-0 Retina + LoRA</td>
-              <td class="num">10.81M</td>
-              <td><span class="badge-adapt">LoRA</span></td>
-              <td class="num">70.8%</td>
-              <td class="num">47.9%</td>
-              <td class="num">58.1%</td>
-              <td class="num">&mdash;</td>
-              <td class="num">60.0%</td>
-              <td class="num">43.3%</td>
-              <td class="num">63.3%</td>
-              <td class="num">+7.72</td>
-            </tr>
-            <tr>
-              <td>Generic Mid-Layer V1</td>
-              <td class="num">8.35M</td>
-              <td><span class="badge-frozen">Frozen</span></td>
-              <td class="num">55.0%</td>
-              <td class="num">35.0%</td>
-              <td class="num">43.6%</td>
-              <td class="num">46.9% / 31.1%</td>
-              <td class="num">46.3%</td>
-              <td class="num">33.3%</td>
-              <td class="num">40.0%</td>
-              <td class="num">+0.94</td>
-            </tr>
-            <tr class="highlight">
-              <td>BPE-V2 Word Retina (Frozen)</td>
-              <td class="num">6.47M</td>
-              <td><span class="badge-frozen">Frozen</span></td>
-              <td class="num">97.1%</td>
-              <td class="num">60.0%</td>
-              <td class="num">63.6%</td>
-              <td class="num">96.9% / 58.6%</td>
-              <td class="num">83.8%</td>
-              <td class="num">73.3%</td>
-              <td class="num">61.7%</td>
-              <td class="num">+0.31</td>
-            </tr>
-            <tr>
-              <td><strong>BPE-V2 Word Retina + LoRA</strong></td>
-              <td class="num">11.51M</td>
-              <td><span class="badge-adapt">LoRA</span></td>
-              <td class="num"><strong>96.7%</strong></td>
-              <td class="num"><strong>63.8%</strong></td>
-              <td class="num"><strong>70.0%</strong></td>
-              <td class="num"><strong>93.8% / 62.1%</strong></td>
-              <td class="num"><strong>82.5%</strong></td>
-              <td class="num"><strong>71.7%</strong></td>
-              <td class="num">38.3%</td>
-              <td class="num"><strong>+0.27</strong></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p style="font-family:var(--sans);font-size:12.8px;color:var(--ink-faint);margin-top:-12px;">
-        *4 Perceptual Tasks = <code>count</code>, <code>length</code>, <code>nth</code>, <code>double</code>. Per-task real-word scores for <code>BPE-V2 (Frozen)</code>: <code>count</code> <strong>98.3%</strong>, <code>length</code> <strong>91.7%</strong>, <code>nth</code> <strong>100.0%</strong>, <code>double</code> <strong>98.3%</strong>. Compound BPE shows <em>4-perceptual / all-7</em>.
-      </p>
-
-      <div class="finding">
-        <strong class="tag">Finding: Two Organs, Two Natural Regimes</strong>
-        Look at the vertical dashed divider in Figure 2. Our two weight-space organs partition character-level tasks cleanly along a fundamental computational boundary:
-        <ul style="margin-top:8px;margin-bottom:0;">
-          <li><strong>Single-pass perception &amp; zero-shot OOD (<code>BPE-V2 Word Retina</code>):</strong> Counting, length, \(n\)-th letter, double letters across BPE seams, and even zero-shot multi-word counts jump to <strong>73%–100%</strong> on a 100% frozen host with zero tool tags and zero CoT tokens.</li>
-          <li><strong>Multi-token algorithmic rewrites (<code>Exact X-Ray ALU</code>):</strong> Autoregressively emitting a transformed spelling token-by-token (<code>delete</code>, <code>replace</code>, <code>reverse</code>, <code>rot13</code>) still overwhelms a single-pass frozen readout—and is exactly where the compiled ALU hits <strong>100.0%</strong>.</li>
-        </ul>
-      </div>
-
-      <!-- SECTION 4 -->
-      <h2 id="causal-proofs">4. Proving the Model Actually Sees Through Its Retina</h2>
-
-      <p>
-        High accuracy on a benchmark isn't enough. A skeptical reader should immediately ask: <em>"How do I know your 6.5M-parameter taps didn't just learn a clever shortcut off the host's own hidden states while ignoring the compiled retina?"</em>
-      </p>
-      <p>
-        We ran three direct causal interventions to test this—and the difference between our failed architectures and <code>BPE-V2</code> turned out to be night and day.
-      </p>
-
-      <figure>
-        <img src="figures/fig3_causal_proof.png" alt="Causal blindfold drop and systematic 25-word optical illusion fidelity across architectures" loading="lazy">
-        <figcaption>
-          <strong>Figure 3. Causal proofs that the frozen LLM genuinely reads its compiled retina.</strong>
-          <em>Left:</em> Cutting the optic nerve (<code>retina_scale = 0.0</code>) collapses <code>BPE-V2 (Frozen)</code> straight back to untouched base accuracy across every split (&minus;42.6 pts real, &minus;56.2 pts nonce).
-          <em>Right:</em> Perturbing <em>only</em> <code>F_retina</code> while keeping input text tokens 100% identical yields <strong>88%</strong> (frozen) and <strong>94%</strong> (+LoRA) optical illusion fidelity across 25 words—compared to 8–16% for Naive Layer-0 and Generic V1.
-        </figcaption>
-      </figure>
-
-      <h3>Test 1: The Blindfold Test (Cutting the Optic Nerve)</h3>
-      <p>
-        At test time, we multiply the retina injection by <code>0.0</code>. Because the host is 100% frozen, blindfolding <code>BPE-V2 (Frozen)</code> instantaneously restores the untouched base model: real-word accuracy crashes from <strong>60.0% &rarr; 17.4% (&minus;42.6 pts)</strong>, unseen nonce words crash from <strong>63.6% &rarr; 7.4% (&minus;56.2 pts)</strong>, compound BPE chunks crash from <strong>58.6% &rarr; 18.6% (&minus;40.0 pts)</strong>, and pure cross-BPE double letters drop from <strong>83.8% &rarr; 51.2% (&minus;32.5 pts)</strong>.
-      </p>
-
-      <h3>Test 2: The Optical Illusion Test (Identical Text, Perturbed Retina)</h3>
-      <p>
-        Even stronger than blindfolding: what if we keep the input tokens <strong>100% identical</strong>—the LLM literally receives the exact same prompt IDs for <code>strawberry</code> (<code>["str", "aw", "berry"]</code>)—and we quietly add an integer offset \(\delta\) <em>only</em> to the <code>'r'</code> column of <code>F_retina</code> on the token <code>"berry"</code>?
-      </p>
-      <p>
-        If the model is genuinely reading its retina, it should experience a controllable <strong>optical illusion</strong>: looking at the untouched word <code>strawberry</code> and calmly reporting <code>1</code> or <code>2</code> <code>r</code>'s! Try the actual recorded predictions from our runs below:
-      </p>
-
-      <!-- INTERACTIVE WIDGET 2 -->
-      <div class="widget" id="illusion-lab">
-        <div class="widget-header">
-          <div class="widget-title">
-            Interactive Optical Illusion Lab
-            <span class="widget-badge rose">Recorded Model Data</span>
-          </div>
-          <span style="font-size:12px;color:var(--ink-faint);">100% identical prompt tokens &middot; only <code>F_retina['r']</code> is perturbed</span>
-        </div>
-
-        <div class="widget-controls">
-          <span style="font-size:12.5px;color:var(--ink-muted);font-weight:600;">Model:</span>
-          <button class="w-btn rose active" data-arch="v2_frozen">BPE-V2 (Frozen Host)</button>
-          <button class="w-btn rose" data-arch="v2_lora">BPE-V2 + LoRA</button>
-          <button class="w-btn rose" data-arch="v1_frozen">Generic V1 (Frozen)</button>
-          <button class="w-btn rose" data-arch="l0_lora">Naive Layer-0 + LoRA</button>
-        </div>
-
-        <div class="slider-row">
-          <span style="font-size:13px;font-weight:600;min-width:150px;">Retina perturbation &delta;:</span>
-          <input id="ill-slider" type="range" min="-2" max="3" step="1" value="-1" aria-label="Perturbation delta">
-          <span id="ill-delta-badge" style="font-family:var(--mono);font-weight:700;font-size:14px;padding:3px 10px;border-radius:6px;background:var(--rose-soft);color:var(--rose);">&delta; = -1</span>
-        </div>
-
-        <div class="illusion-stage">
-          <div class="stage-panel">
-            <div style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-faint);margin-bottom:8px;">Untouched Input Prompt</div>
-            <div style="font-family:var(--mono);font-size:12.5px;line-height:1.65;">
-              How many times does the letter <span class="tok">'r'</span> appear in
-              <span class="tok">str</span><span class="tok">aw</span><span class="tok" style="border-color:var(--rose);background:var(--rose-soft);color:#9d174d;font-weight:600;">berry</span>?<br>
-              Answer:
-            </div>
-            <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);font-size:12.2px;color:var(--ink-muted);" id="ill-explain"></div>
-          </div>
-
-          <div class="stage-panel" style="display:flex;flex-direction:column;justify-content:space-between;">
-            <div>
-              <div style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-faint);">Recorded Model Output</div>
-              <div style="display:flex;align-items:baseline;gap:14px;margin-top:4px;">
-                <div id="ill-pred" class="pred-big hit">'2'</div>
-                <div style="font-size:12.5px;color:var(--ink-muted);">
-                  Illusion target: <strong id="ill-target" style="font-family:var(--mono);color:var(--ink);">2</strong><br>
-                  <span id="ill-status"></span>
-                </div>
-              </div>
-            </div>
-            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
-              <div style="display:flex;justify-content:space-between;font-size:12px;">
-                <span style="color:var(--ink-muted);">25-Word Systematic Fidelity (n=50)</span>
-                <strong id="ill-fid-txt" style="color:var(--ink);">88.0%</strong>
-              </div>
-              <div class="fid-meter"><div id="ill-fid-bar" class="fid-fill" style="width:88%;"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p>
-        Notice something subtle and honest in the slider above! On <code>strawberry</code> (true count = 3), <code>BPE-V2</code> tracks \(\delta = -2, -1, 0\) with 100% precision (predicting <code>'1'</code>, <code>'2'</code>, <code>'3'</code>), and then saturates for \(\delta \in \{+1, +2, +3\}\) (targets <code>4, 5, 6</code>). Why? Because single-word English training examples almost never have more than 3 occurrences of the same letter, so readout buckets <code>4, 5, 6</code> are out-of-distribution for the learned tap! Across our systematic 25-word suite (50 perturbations spanning trained counts <code>0..3</code>), optical illusion fidelity jumps from <strong>10%</strong> (Layer-0) and <strong>8–16%</strong> (Generic V1) straight to <strong>88.0% (44/50)</strong> on <code>BPE-V2 (Frozen)</code> and <strong>94.0% (47/50)</strong> on <code>BPE-V2 + LoRA</code>.
-      </p>
-
-      <h3 id="stress-tests">Test 3: Compound BPE Chunks &amp; Adversarial Random Re-Tokenization</h3>
-
-      <p>
-        Finally, we stress-tested tokenization invariance directly. In the left panel of Figure 4, we glue random 4–7 character BPE chunks together into novel 9–13 character pseudowords that Qwen's tokenizer compresses into \(\le 3\) opaque tokens—the worst-case regime for memorizing spellings. <code>BPE-V2 (Frozen)</code> hits <strong>96.9%</strong> across the 4 perceptual tasks (<strong>100%</strong> count, <strong>100%</strong> double, <strong>95.0%</strong> length, <strong>92.5%</strong> nth) vs. Plain LoRA's <strong>64.4%</strong> (+32.5 pts).
-      </p>
-      <p>
-        In the right panel, we take held-out words and randomly fragment them into alternative valid BPE tokenizations representing the exact same byte string. <code>BPE-V2</code> stays rock-solid (<strong>70.0% &rarr; 73.1%</strong> frozen, <strong>73.1% &rarr; 75.0%</strong> + LoRA), and the Exact ALU stays at <strong>100% &rarr; 100%</strong>.
-      </p>
-
-      <figure>
-        <img src="figures/fig4_adversarial_bpe.png" alt="Compound BPE pseudoword stress test and adversarial random BPE split invariance" loading="lazy">
-        <figcaption>
-          <strong>Figure 4. BPE compression stress tests &amp; tokenization invariance.</strong>
-          <em>Left:</em> Glued multi-char BPE chunks compressed to \(\le 3\) tokens—<code>BPE-V2 (Frozen)</code> reaches 96.9% perceptual accuracy vs. 64.4% for Plain LoRA.
-          <em>Right:</em> Canonical BPE vs. random valid subword splits of the exact same strings.
-        </figcaption>
-      </figure>
-
-      <!-- SECTION 5 -->
-      <h2 id="limitations">5. Honest Limitations &amp; What Comes Next</h2>
-
-      <p>
-        This is a fast prototype, and there are four clear boundaries worth calling out plainly:
-      </p>
-      <ol>
-        <li><strong>Multi-token string surgery remains hard without CoT or an ALU:</strong> <code>BPE-V2</code> gives a frozen host near-perfect single-pass character <em>perception</em> (97.1% real, 96.9% compound BPE, 73.3% zero-shot OOD multi-word), but autoregressive character-level editing (<code>delete</code> 23%, <code>replace</code> 7%, <code>reverse</code> 2% frozen) still needs either step-by-step generation or the Exact ALU (100%). Combining the two—an intuitive retina plus an exact ALU—is an obvious next step.</li>
-        <li><strong>Out-of-range bucket saturation on optical illusions:</strong> Because our single-word English training set rarely contains &gt;3 copies of one letter, <code>BPE-V2</code>'s learned tap saturates above count 3 (explaining why <code>strawberry</code> obeys \(\delta=-2,-1,0\) exactly while \(\delta=+1,+2,+3\) saturates, even as the 25-word suite hits 88–94%). Adding a handful of high-count synthetic strings (or passing a continuous scalar projection) would immediately remove that ceiling.</li>
-        <li><strong>Span latching in <code>WordRetinaScanner</code>:</strong> In this prototype, <code>WordRetinaScanner</code> uses algebraic quote-token gates (<code>'...'</code>) to latch the target word span and persist it across <code>?\nAnswer:</code>. Generalizing span latching to arbitrary unquoted prose—for instance via lightweight learned boundary gates or whitespace-delimited rolling word registers—would make the retina trigger on completely unconstrained prompts.</li>
-        <li><strong>Scale &amp; co-training:</strong> We verified cross-family compilation of the Exact ALU on <code>Qwen3-0.6B</code>, <code>Qwen3-1.7B</code>, and <code>SmolLM2-1.7B</code>, while <code>BPE-V2</code> training was run on <code>Qwen3-0.6B-Base</code>. Scaling <code>BPE-V2</code> to larger models and co-training with RL (as in WSM) is wide open.</li>
-      </ol>
-
-      <div class="finding">
-        <strong class="tag">Takeaway</strong>
-        Don't ask gradient descent to memorize static structure that already lives in your tokenizer file. Compile the invariant geometry of <code>tokenizer.json</code> into weight space once, and let the model spend its parameters on reasoning instead of memorizing how 151,936 tokens are spelled.
-      </div>
-
-      <!-- SECTION 6 -->
-      <h2 id="reproduce">6. Reproducing Everything &amp; Citation</h2>
-
-      <p>
-        Every experiment, unit test, saved JSON result, and plotting script is open-source at <a href="https://github.com/samarth777/bpe-xray" target="_blank" rel="noopener">github.com/samarth777/bpe-xray</a>:
-      </p>
-      <ul>
-        <li><code>src/char_tables.py</code> &mdash; Compiles <code>CharWeightBank</code> (<code>E_hist</code>, <code>E_alpha_chars</code>, <code>F_retina</code>) directly from any HuggingFace tokenizer.</li>
-        <li><code>src/xray_alu.py</code> &amp; <code>src/run_alu_eval.py</code> &mdash; Exact Weight-Space BPE X-Ray ALU and 3-model evaluation harness.</li>
-        <li><code>src/word_retina.py</code> &amp; <code>src/train_v2.py</code> &mdash; <code>BPE-V2</code> BPE-invariant Word Retina, <code>LatentIntuitionTap</code>, and causal Blindfold / Optical Illusion / Adversarial BPE test suites.</li>
-        <li><code>src/xray_retina.py</code> &amp; <code>src/visual_cortex.py</code> &mdash; Naive Layer-0 and Generic Mid-Layer V1 ablations.</li>
-        <li><code>src/make_figures.py</code> &mdash; Regenerates all four figures directly from <code>results/*.json</code>.</li>
-      </ul>
-
-      <h3 id="bibtex">Citation</h3>
-      <div class="bib-wrap">
-        <button class="copy-btn" id="copy-bib">Copy BibTeX</button>
-<pre><code id="bib-code">@misc{samarth2026bpexray,
+  <div class="stage on" id="h-stage"></div>
+  <div class="readout" id="h-readout"></div>
+  <div class="foot" id="h-foot">Real <code>Qwen3-0.6B-Base</code> tokenization. With X-ray off, this is all Layer 0 gets: three integer IDs. With it on, you see what <code>tokenizer.json</code> already knows about each one.</div>
+</div>
+
+<div class="tldr">
+  <p><strong>TL;DR.</strong> LLMs fail at <em>"how many r's in strawberry?"</em> because BPE hands them opaque token IDs. But the spelling of every token is known statically, so we compile it once from <code>tokenizer.json</code> into frozen lookup tensors and build two organs on top. After that, no tokenizer calls and no Python string ops.</p>
+  <p><strong>The X-Ray ALU</strong> is a pure-tensor circuit with no training. It is triggered by <code>[XRAY op | text]=</code> and stays bit-for-bit silent otherwise. It takes held-out accuracy from 25% to 100% on Qwen3-0.6B and compiles for three models in 5–29 seconds.</p>
+  <p><strong>The Word Retina (BPE-V2)</strong> is a BPE-invariant word recurrence tapped into a <em>100% frozen</em> Qwen3-0.6B. It answers plain-English character questions with no tags and no chain of thought: 97.1% on perceptual tasks vs. 71.7% for a larger LoRA. When we edit only its sensory input, the model reports counts it was never shown.</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="n">25→100%</div><div class="l">ALU, held-out words, zero training</div></div>
+  <div class="stat"><div class="n g">97.1%</div><div class="l">Retina on a frozen host (LoRA: 71.7%)</div></div>
+  <div class="stat"><div class="n">88%</div><div class="l">optical-illusion fidelity (naive: 10%)</div></div>
+  <div class="stat"><div class="n">+0.31</div><div class="l">prose PPL drift (LoRA: +5.08)</div></div>
+</div>
+
+<p style="margin-top:44px">LLMs have a small, persistent embarrassment. A model that sails through a proof will guess when you ask how many <code>r</code>'s are in <em>strawberry</em>, whether a word has a double letter split across a subword boundary, or what <em>chrysanthemum</em> is backwards without spelling it out first.</p>
+
+<p>The culprit is Byte-Pair Encoding. When <code>Qwen3-0.6B-Base</code> reads <em>strawberry</em>, Layer 0 never sees ten characters. It sees <code>[495, 672, 15357]</code>. To count the <code>r</code>'s, the model has to have memorized the spellings of its 151,936 vocabulary entries somewhere in its MLPs and then sum across arbitrary seams.</p>
+
+<p>The usual fixes are to spend chain-of-thought tokens spelling the word out, or to call a Python sandbox. Both treat character blindness as a fact of life. It isn't one: <strong>the spelling of every token is known statically, at build time, in <code>tokenizer.json</code>.</strong></p>
+
+<span class="sn">Papailiopoulos et al. compile small exact circuits ("brain implants") directly into weight space and attach them to a frozen model.</span>
+<p>Reading <a href="https://papail.io/papers/wsm/">Weight-Space Micromachines</a> raised an obvious question:</p>
+
+<p class="pull">Can we compile character vision straight out of <code>tokenizer.json</code> and graft it into a frozen LLM?</p>
+
+<p>This post covers the two organs we built, the two plausible designs that failed on the way, the ablation that pointed to the fix, and the causal tests showing the model really reads its implant.</p>
+
+<!-- 1 -->
+<h2 id="blind"><span class="num">1</span>Token blindness is a missing sense</h2>
+
+<p>We first built a strictly <strong>word-disjoint benchmark</strong> (<code>src/benchmarks.py</code>). It has 418 training words and 162 held-out English words, plus several stress sets:</p>
+<ul>
+  <li>fresh nonce pseudowords;</li>
+  <li><em>compound BPE</em> strings, where long chunks are glued together so they compress to ≤3 tokens;</li>
+  <li><em>cross-BPE doubles</em>, where the only double letter sits exactly on a token seam;</li>
+  <li>two zero-shot tasks never seen in training: multi-word counting and anagram detection.</li>
+</ul>
+<p>Frozen <code>Qwen3-0.6B-Base</code> scores <strong>19.1%</strong> zero-shot across 7 tasks and <strong>25.0%</strong> 2-shot across 6, including a flat 0% on <code>reverse</code> and <code>rot13</code>.</p>
+
+<h3>Compiling the tokenizer into a weight bank</h3>
+<p>A tokenizer is a finite map from token ID to a short string. We read it <em>once</em>, offline, and compile a frozen <code>CharWeightBank</code> (<code>src/char_tables.py</code>):</p>
+<ul>
+  <li><code>E_hist [V, 26]</code>: case-insensitive letter counts per token (7.9&nbsp;MB in bf16).</li>
+  <li><code>E_alpha_chars [V, 16]</code>: the letter IDs in order, plus <code>E_alpha_len [V]</code>.</li>
+  <li><code>F_retina [V, 358]</code>: a richer per-token sensory vector. It holds the histogram, first/last-letter one-hots, first-5/last-5 character one-hots, lengths, leading-space flag, internal-double flag, and case/digit bits.</li>
+</ul>
+<span class="sn">Compilation takes 5.2 s for SmolLM2 and 12–29 s for Qwen3.</span>
+<p>After that, <strong>the tokenizer is never called again</strong>. Looking up a token's anatomy is an embedding lookup inside the forward pass: <code>F_retina[input_ids]</code>.</p>
+
+<div class="xray wide" id="insp" style="max-width:920px">
+  <div class="row" style="justify-content:space-between">
+    <span class="label">Same bytes, different tokens</span>
+    <div class="row">
+      <input type="text" id="i-word" value="bookkeeper" size="14" spellcheck="false" aria-label="word">
+      <input type="text" id="i-letter" value="e" size="2" maxlength="1" style="text-align:center" aria-label="letter">
+      <button class="xbtn" id="i-roll">Re-split ↻</button>
+    </div>
+  </div>
+  <div class="cols">
+    <div class="pane"><div class="label"><span id="i-l1">Qwen3 tokenization</span><span id="i-n1"></span></div><div class="chips" id="i-c1"></div><div class="hist" id="i-h1"></div></div>
+    <div class="pane"><div class="label"><span>Random re-split</span><span id="i-n2"></span></div><div class="chips" id="i-c2"></div><div class="hist" id="i-h2"></div></div>
+  </div>
+  <div class="diff" id="i-diff"></div>
+  <div class="foot">The bars are the word-level letter histogram the retina accumulates from <code>E_hist</code>, one row per tokenization. Teal tags mark doubles that straddle a seam, which the retina detects as <code>prev_last · first</code>. On the real 623-dim state, max |Δ| between <code>str|aw|berry</code> and <code>s|traw|ber|ry</code> is exactly <code>0.0</code>. (Illustration computed in your browser; left column is the real Qwen3 split for 600 benchmark words.)</div>
+</div>
+
+<!-- 2 -->
+<h2 id="alu"><span class="num">2</span>Organ one: an exact character ALU</h2>
+
+<p>The first organ (<code>src/xray_alu.py</code>) is a pure-tensor circuit hooked onto the frozen host's final RMSNorm. No weight of the base model is trained. It follows the WSM recipe of <strong>read → compute → write</strong>, with one strict contract: <em>if no <code>[XRAY …]=</code> span is open, the hook returns the hidden state untouched</em>. That makes logits bit-for-bit identical on normal prose and on every step before the trigger.</p>
+
+<ul>
+  <li><strong>Read.</strong> Vocabulary indicator vectors plus lower-triangular prefix sums find <code>[XRAY</code>, the op, an optional argument, <code>|</code>, and <code>]=</code>.</li>
+  <li><strong>Compute.</strong> <code>count</code> and <code>len</code> sum <code>E_hist</code> or <code>E_alpha_len</code> over the span. <code>nth</code>, <code>spell</code>, <code>reverse</code>, and <code>rot13</code> use cumulative lengths and ReLU indicator gates to pick the exact token and slot. ROT13 is a fixed 26×26 permutation matrix.</li>
+  <li><strong>Write.</strong> For each output token (digits, letters, <code>-</code>, newline), we solve a direction <code>W_write[t]</code> in post-norm space against <code>lm_head</code>, so that adding <code>γ·W_write[t]</code> makes <code>t</code> the argmax.</li>
+</ul>
+
+<span class="sn">Verified exact on every integer 0–999. Nowhere does it call Python's <code>str(n)</code>.</span>
+<p>Even turning a count into digits is ReLU arithmetic:</p>
+<pre><code><span class="k">def</span> <span class="f">relu_step</span>(x, t):      <span class="c"># 1 iff integer x >= t</span>
+    <span class="k">return</span> F.relu(x - (t - <span class="m">1</span>)) - F.relu(x - t)
+
+<span class="k">def</span> <span class="f">relu_eq_int</span>(x, k):    <span class="c"># 1 iff integer x == k</span>
+    <span class="k">return</span> F.relu(<span class="m">1</span> - torch.abs(x - k))
+
+d_hundreds = sum(relu_step(n, <span class="m">100</span> * c) <span class="k">for</span> c <span class="k">in</span> range(<span class="m">1</span>, <span class="m">10</span>))
+rem        = n - <span class="m">100</span> * d_hundreds
+d_tens     = sum(relu_step(rem, <span class="m">10</span> * c) <span class="k">for</span> c <span class="k">in</span> range(<span class="m">1</span>, <span class="m">10</span>))
+d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
+
+<div class="xray wide" id="alu-demo" style="max-width:860px">
+  <div class="row" style="justify-content:space-between">
+    <span class="label">Recorded traces · Qwen3-0.6B-Base · 0 training</span>
+    <div class="row" id="a-tabs"></div>
+  </div>
+  <div class="vs" id="a-vs">
+    <div class="pane"><div class="label">Frozen model alone</div><div style="margin-top:8px;color:#b9c8d1">[XRAY count r | strawberry]=</div><div class="out bad">2</div></div>
+    <div class="pane"><div class="label">+ X-Ray ALU</div><div style="margin-top:8px;color:#b9c8d1">[XRAY count r | strawberry]=</div><div class="out good">3</div></div>
+  </div>
+  <div class="term" id="a-term" style="display:none"></div>
+  <div class="foot">Highlighted characters are the ones the ALU wrote. Everything before <code>]=</code> is the frozen model generating on its own. All traces come from <code>results/alu_eval_Qwen_Qwen3-0.6B-Base.json</code>.</div>
+</div>
+
+<h3>Results across model families</h3>
+<p>Is this a one-off hack or a portable compiler? We ran the same script on three models with two different tokenizers. Each got 2-shot in-context examples to teach the tag format, with zero gradient steps, plus a direct-circuit check on all 13 suites.</p>
+
+<figure class="wide">
+  <img src="figures/fig1_alu_hero.png" alt="X-Ray ALU accuracy across six tasks on held-out real and nonce words" loading="lazy">
+  <figcaption><b>Figure 1.</b> The exact ALU with zero fine-tuning. On Qwen3-0.6B (2-shot), held-out accuracy goes from 25.0% to 100.0% across all six tasks, including 0→100% on <code>reverse</code> and <code>rot13</code>. The same compiler transfers to Qwen3-1.7B and SmolLM2-1.7B.</figcaption>
+</figure>
+
+<div class="tbl">
+<table>
+<thead><tr><th>Model</th><th class="r">Compile</th><th>Prose bit-identical</th><th class="r">Real (6 tasks)</th><th class="r">Nonce (6 tasks)</th><th class="r">Multi-word</th><th class="r">Direct circuit</th></tr></thead>
+<tbody>
+<tr><td><code>Qwen3-0.6B-Base</code></td><td class="r">28.8 s</td><td>✓</td><td class="r"><span class="dim">25.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r"><span class="dim">22.3</span><span class="arrow">→</span><strong>92.0</strong></td><td class="r"><span class="dim">28.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r">100.0</td></tr>
+<tr><td><code>Qwen3-1.7B-Base</code></td><td class="r">12.6 s</td><td>✓</td><td class="r"><span class="dim">34.7</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r"><span class="dim">29.3</span><span class="arrow">→</span><strong>93.0</strong></td><td class="r"><span class="dim">34.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r">100.0</td></tr>
+<tr><td><code>SmolLM2-1.7B</code></td><td class="r">5.2 s</td><td>✓</td><td class="r"><span class="dim">29.7</span><span class="arrow">→</span><strong>99.7</strong></td><td class="r"><span class="dim">18.3</span><span class="arrow">→</span><strong>94.7</strong></td><td class="r"><span class="dim">30.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r">100.0</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Why is nonce accuracy 92–95% when the circuit is 100%? Under 2-shot prompting, the base model sometimes mis-copies an unfamiliar pseudoword into the tag <em>before</em> the ALU fires. Once the tag closes, the ALU makes no mistakes on any of the 13 suites, on any of the 3 models.</p>
+
+<!-- 3 -->
+<h2 id="retina"><span class="num">3</span>Organ two: a retina for a frozen model</h2>
+
+<p>The ALU is exact, but it is a coprocessor you call with a tag. We wanted something harder: can a <strong>100% frozen</strong> LLM answer ordinary questions such as <code>How many times does the letter 'r' appear in 'strawberry'?\nAnswer:</code> with the very next token, with no tags and no chain of thought, just by <em>seeing</em>?</p>
+
+<h3>Two attempts that failed, and the clue</h3>
+<p>All three designs were trained on <code>Qwen3-0.6B-Base</code> with 4,096 word-disjoint examples over 7 tasks: count, length, nth, double, delete, replace, and reverse. The baseline was a rank-18 LoRA with 11.35M parameters.</p>
+
+<div class="attempts">
+  <div class="att">
+    <div class="tag no">Attempt 1</div>
+    <div><h4>Naive Layer-0 retina + LoRA</h4>
+    <p>Project <code>F_retina[ids]</code> into the input embeddings (10.81M params). It scored 47.9% real / 58.1% nonce, which is <em>worse</em> than plain LoRA (49.5 / 60.7). Blindfolding it cost only −2.4 pts. At layer 0, <em>"berry"</em> doesn't yet know what's being asked, and LoRA found it easier to memorize spellings than to route a foreign signal through 28 frozen layers.</p></div>
+  </div>
+  <div class="att">
+    <div class="tag meh">Attempt 2</div>
+    <div><h4>Generic mid-layer cross-attention (V1)</h4>
+    <p>Taps at layers 14/20/24, where the residual stream already encodes the question. The host now depended on it (−17.1 pts when blindfolded), but accuracy stalled at 35.0% and illusion fidelity at 16%. Generic attention had to learn subword-to-word aggregation from 4k examples.</p></div>
+  </div>
+  <div class="att">
+    <div class="tag yes">The clue</div>
+    <div><h4>One number lit up</h4>
+    <p>On cross-BPE doubles, the one feature we had <em>already</em> made seam-invariant, V1+LoRA jumped to 78.8%. Blindfolded, it fell 30 pts. The host wasn't ignoring the organ. It just couldn't build invariant features itself, and it latched onto them as soon as they were handed over.</p></div>
+  </div>
+</div>
+
+<p>The fix follows directly: <strong>compile everything that is algebraically invariant, and learn only the interface.</strong></p>
+
+<h3>BPE-V2: a compiled word retina</h3>
+<p><code>WordRetinaScanner</code> (<code>src/word_retina.py</code>) is a causal gated linear recurrence over <code>F_retina[ids]</code> and <code>E_alpha_chars[ids]</code>. As subword tokens stream through a quoted span, it accumulates:</p>
+<ul>
+  <li>the exact word-level letter histogram and word length;</li>
+  <li>doubles across seams, as one dot product of the previous token's last letter with the current token's first;</li>
+  <li>a placed character grid <code>[16, 26]</code>, indexed by cumulative offset;</li>
+  <li>query readouts (<code>matched_cnt</code>, <code>matched_nth</code>, <code>is_anagram</code>), giving 623 dims in total.</li>
+</ul>
+<pre><code><span class="c"># core of WordRetinaScanner: pure tensor algebra, no string ops</span>
+cross_dbl = (st[<span class="s">"prev_last"</span>] * fa_t).sum(-<span class="m">1</span>) * st[<span class="s">"prev_has_alpha"</span>] * (<span class="m">1</span> - ls)
+pos_idx   = st[<span class="s">"sp_len"</span>].unsqueeze(<span class="m">1</span>) + self.slot_offsets
+slot_mask = relu_eq_int(self.pos_grid, pos_idx.unsqueeze(<span class="m">1</span>))
+placed    = torch.einsum(<span class="s">"bgl,blc->bgc"</span>, slot_mask, tok_oh)
+
+st[<span class="s">"sp_hist"</span>]  += a1 * h_t
+st[<span class="s">"sp_len"</span>]   += active * al
+st[<span class="s">"sp_dbl"</span>]    = torch.clamp(st[<span class="s">"sp_dbl"</span>] + active * (idbl_t + cross_dbl), <span class="m">0</span>, <span class="m">1</span>)
+st[<span class="s">"sp_chars"</span>] += a1.unsqueeze(-<span class="m">1</span>) * placed</code></pre>
+
+<span class="sn">Each tap is a SwiGLU-style bilinear residual: h′ = h + α·W<sub>out</sub>(SiLU(W<sub>g2</sub>h̃) ⊙ W<sub>mix</sub>(SiLU(W<sub>g1</sub>h̃) ⊙ W<sub>s</sub>S)).</span>
+<p>This state goes into the frozen host through three small <code>LatentIntuitionTap</code>s at layers 16/20/24, for <strong>6.47M</strong> trainable parameters in total (57% of the LoRA budget). Each output projection starts at exactly zero, so the model is bit-identical at step 0. A light KL anchor on random prose keeps the logits on untouched text where they were.</p>
+
+<figure class="wide">
+  <img src="figures/fig2_retina_vs_lora.png" alt="BPE-V2 on a frozen host vs Plain LoRA: sample efficiency and per-task accuracy" loading="lazy">
+  <figcaption><b>Figure 2.</b> BPE-V2 on a 100% frozen Qwen3-0.6B vs. plain LoRA, with no CoT and no tags. <em>Left:</em> sample efficiency. With 2,048 examples and 6.5M params, V2 already beats LoRA trained on 4,096. <em>Right:</em> per-task results at n=4,096. There is a sharp split between single-pass perception (73–100%) and multi-token string edits.</figcaption>
+</figure>
+
+<div class="tbl wide">
+<table>
+<thead><tr><th>Qwen3-0.6B, n=4,096</th><th class="r">Params</th><th>Host</th><th class="r">Perceptual*</th><th class="r">All 7 real</th><th class="r">All 7 nonce</th><th class="r">Cross-BPE dbl</th><th class="r">OOD multi-word</th><th class="r">ΔPPL<sup>†</sup></th></tr></thead>
+<tbody>
+<tr><td>Frozen base</td><td class="r">0</td><td class="dim">frozen</td><td class="r">33.3</td><td class="r">19.1</td><td class="r">10.7</td><td class="r">50.0</td><td class="r">25.0</td><td class="r">0.00</td></tr>
+<tr><td>Plain LoRA r=18</td><td class="r">11.35M</td><td class="dim">adapted</td><td class="r">71.7</td><td class="r">49.5</td><td class="r">60.7</td><td class="r">70.0</td><td class="r">38.3</td><td class="r">+5.08</td></tr>
+<tr><td>Layer-0 retina + LoRA</td><td class="r">10.81M</td><td class="dim">adapted</td><td class="r">70.8</td><td class="r">47.9</td><td class="r">58.1</td><td class="r">60.0</td><td class="r">43.3</td><td class="r">+7.72</td></tr>
+<tr><td>Generic V1</td><td class="r">8.35M</td><td class="dim">frozen</td><td class="r">55.0</td><td class="r">35.0</td><td class="r">43.6</td><td class="r">46.3</td><td class="r">33.3</td><td class="r">+0.94</td></tr>
+<tr class="me"><td><strong>BPE-V2</strong></td><td class="r">6.47M</td><td>frozen</td><td class="r"><strong>97.1</strong></td><td class="r">60.0</td><td class="r">63.6</td><td class="r"><strong>83.8</strong></td><td class="r"><strong>73.3</strong></td><td class="r">+0.31</td></tr>
+<tr><td>BPE-V2 + LoRA</td><td class="r">11.51M</td><td class="dim">adapted</td><td class="r">96.7</td><td class="r"><strong>63.8</strong></td><td class="r"><strong>70.0</strong></td><td class="r">82.5</td><td class="r">71.7</td><td class="r"><strong>+0.27</strong></td></tr>
+</tbody>
+</table>
+</div>
+<p class="tnote">* count, length, nth, double on held-out real words. Frozen V2 per task: 98.3 / 91.7 / 100.0 / 98.3. † Held-out prose perplexity shift. The LoRA and Layer-0 arms were measured on a different prose sample (base PPL 25.9) from the V1/V2 arms (base 30.2–30.4).</p>
+<details><summary>Compound BPE and anagram columns</summary>
+<div class="tbl" style="margin-top:12px"><table>
+<thead><tr><th></th><th class="r">Compound (perc. / all 7)</th><th class="r">OOD anagram</th></tr></thead>
+<tbody>
+<tr><td>Frozen base</td><td class="r">—</td><td class="r">38.3</td></tr>
+<tr><td>Plain LoRA</td><td class="r">64.4 / 44.3</td><td class="r">58.3</td></tr>
+<tr><td>Layer-0 retina + LoRA</td><td class="r">—</td><td class="r">63.3</td></tr>
+<tr><td>Generic V1</td><td class="r">46.9 / 31.1</td><td class="r">40.0</td></tr>
+<tr class="me"><td>BPE-V2</td><td class="r">96.9 / 58.6</td><td class="r">61.7</td></tr>
+<tr><td>BPE-V2 + LoRA</td><td class="r">93.8 / 62.1</td><td class="r">38.3</td></tr>
+</tbody></table></div>
+</details>
+
+<div class="callout">
+  <div class="h">Two organs, two regimes</div>
+  <p>The dashed line in Figure 2 separates two kinds of task. <strong>Single-pass perception</strong> (count, length, nth letter, seam doubles, zero-shot multi-word count) reaches 73–100% on a frozen host through the retina. <strong>Multi-token rewrites</strong> (delete, replace, reverse) still overwhelm a single-pass readout, and that is exactly where the compiled ALU is at 100%.</p>
+</div>
+
+<!-- 4 -->
+<h2 id="causal"><span class="num">4</span>Does the model really see?</h2>
+<p>High accuracy isn't proof. A skeptic should ask whether 6.5M parameters of taps simply learned a shortcut from the host's own hidden states. We ran three interventions.</p>
+
+<h3>Blindfold: cut the optic nerve</h3>
+<p>Set the retina scale to 0 at test time. Because the host is frozen, this restores the untouched base model:</p>
+<ul>
+  <li>real words drop from 60.0 to <strong>17.4%</strong> (−42.6);</li>
+  <li>nonce words drop from 63.6 to <strong>7.4%</strong> (−56.2);</li>
+  <li>compound strings drop from 58.6 to 18.6%;</li>
+  <li>seam doubles drop from 83.8 to 51.2%.</li>
+</ul>
+
+<h3>Optical illusion: same text, edited retina</h3>
+<p>This is a stronger test. Keep the prompt tokens <em>identical</em> and add an integer δ only to the <code>'r'</code> column of <code>F_retina</code> for <em>"berry"</em>. If the model really reads its retina, it should see the untouched word <em>strawberry</em> and report a different count. Every output below is a recorded prediction:</p>
+
+<div class="xray wide" id="ill" style="max-width:860px">
+  <div class="row" style="justify-content:space-between">
+    <span class="label">Optical illusion lab · recorded outputs</span>
+    <div class="row" id="o-arch">
+      <button class="xbtn on" data-a="v2_frozen">BPE-V2</button>
+      <button class="xbtn" data-a="v2_lora">V2 + LoRA</button>
+      <button class="xbtn" data-a="v1_frozen">Generic V1</button>
+      <button class="xbtn" data-a="l0_lora">Layer-0</button>
+    </div>
+  </div>
+  <div class="ill">
+    <div class="pane">
+      <div class="label">Prompt (unchanged)</div>
+      <div class="prompt" style="margin-top:8px">How many times does the letter 'r' appear in '<span class="t">str</span><span class="t">aw</span><span class="t pert">berry</span>'?<br>Answer:</div>
+      <div class="slider"><span class="label" style="white-space:nowrap">δ on F_retina['r']</span><input type="range" id="o-d" min="-2" max="3" step="1" value="-1" aria-label="delta"><b id="o-dv" style="font-family:var(--mono);color:var(--hit);min-width:28px">−1</b></div>
+    </div>
+    <div class="pane">
+      <div class="label">Model says</div>
+      <div class="pred y" id="o-p">2</div>
+      <div id="o-s" style="font-size:13px;color:var(--xr-dim)"></div>
+      <div style="margin-top:16px;display:flex;justify-content:space-between;font-size:12px;color:var(--xr-dim)"><span>25-word fidelity (n=50)</span><b id="o-f" style="color:var(--xr-ink)">88%</b></div>
+      <div class="meter"><i id="o-m" style="width:88%"></i></div>
+    </div>
+  </div>
+  <div class="foot" id="o-n"></div>
+</div>
+
+<p>Note the honest boundary. On <em>strawberry</em>, V2 follows δ = −2, −1, 0 exactly (<code>1</code>, <code>2</code>, <code>3</code>) and then saturates. Single English words in training almost never have more than three of one letter, so counts of 4–6 are out of range for the learned readout. On the systematic suite (25 held-out words, a random letter each, δ ∈ {+1, +2} on the word's last token), fidelity is <strong>88%</strong> (44/50) frozen and <strong>94%</strong> (47/50) with LoRA. For comparison, the Layer-0 retina gets 10% and generic V1 gets 8–16%.</p>
+
+<figure class="wide">
+  <img src="figures/fig3_causal_proof.png" alt="Blindfold accuracy drops and optical illusion fidelity across architectures" loading="lazy">
+  <figcaption><b>Figure 3.</b> <em>Left:</em> blindfolding returns V2 to base accuracy on every split. <em>Right:</em> editing only <code>F_retina</code>, with identical text, steers V2 88–94% of the time, against 8–16% for the failed designs.</figcaption>
+</figure>
+
+<h3>Stress tests: compressed and re-tokenized words</h3>
+<p><strong>Compound BPE.</strong> We glue random 4–7 character chunks into 9–13 character strings that compress to ≤3 tokens, the worst case for memorized spellings. Frozen V2 reaches <strong>96.9%</strong> on perceptual tasks (100 count, 100 double, 95 length, 92.5 nth), against 64.4% for LoRA.</p>
+<p><strong>Re-tokenization.</strong> We split held-out words into alternative valid tokenizations of the same bytes. V2 holds (70.0 → 73.1 frozen, 73.1 → 75.0 with LoRA), and the ALU stays at 100 → 100.</p>
+
+<figure class="wide">
+  <img src="figures/fig4_adversarial_bpe.png" alt="Compound BPE stress test and adversarial re-tokenization" loading="lazy">
+  <figcaption><b>Figure 4.</b> <em>Left:</em> compound BPE strings compressed to ≤3 tokens. <em>Right:</em> canonical tokenization vs. random valid re-splits of the same strings.</figcaption>
+</figure>
+
+<!-- 5 -->
+<h2 id="limits"><span class="num">5</span>Limitations</h2>
+<ol>
+  <li><strong>String surgery still needs the ALU.</strong> V2 gives near-perfect single-pass perception, but autoregressive edits remain weak on a frozen host: delete 23%, replace 7%, reverse 2%. Combining the retina with the ALU is the obvious next step.</li>
+  <li><strong>Readout saturation.</strong> The learned tap saturates above the letter counts common in single English words (about 3). A few high-count synthetic strings, or a continuous scalar channel, should lift that ceiling.</li>
+  <li><strong>Span latching.</strong> The scanner uses quote-token gates to find the target word. Unquoted prose would need learned boundary gates or rolling word registers.</li>
+  <li><strong>Scale.</strong> The ALU is verified on three models in two families. V2 was trained only on Qwen3-0.6B. Larger hosts and RL co-training, as in WSM, are open.</li>
+</ol>
+
+<div class="callout">
+  <div class="h">Takeaway</div>
+  <p>Don't ask gradient descent to memorize structure that already lives in your tokenizer file. Compile it into weight space once, and let the model spend its parameters on something else.</p>
+</div>
+
+<!-- 6 -->
+<h2 id="code"><span class="num">6</span>Code &amp; citation</h2>
+<p>All experiments, saved results, and plotting scripts are at <a href="https://github.com/samarth777/bpe-xray">github.com/samarth777/bpe-xray</a>.</p>
+<ul class="files">
+  <li><code>src/char_tables.py</code><span><code>CharWeightBank</code> compiler for any HF tokenizer</span></li>
+  <li><code>src/xray_alu.py</code><span>Exact X-Ray ALU (+ <code>run_alu_eval.py</code>)</span></li>
+  <li><code>src/word_retina.py</code><span>BPE-V2 scanner and taps (+ <code>train_v2.py</code>, causal suites)</span></li>
+  <li><code>src/xray_retina.py</code>, <code>visual_cortex.py</code><span>Layer-0 and V1 ablations</span></li>
+  <li><code>src/make_figures.py</code><span>All figures from <code>results/*.json</code></span></li>
+</ul>
+
+<div class="bib" id="cite">
+<button id="bib-copy">Copy</button>
+<pre><code id="bib">@misc{samarth2026bpexray,
   title  = {BPE X-Ray Vision: Weight-Space Character Organs for Token-Blind LLMs},
   author = {P, Samarth},
   year   = {2026},
   month  = {November},
-  url    = {https://samarth777.github.io/bpe-xray/},
-  note   = {Code: https://github.com/samarth777/bpe-xray}
+  url    = {https://samarth777.github.io/bpe-xray/}
 }</code></pre>
-      </div>
+</div>
+</article>
 
-      <footer>
-        <span>&copy; 2026 <a href="https://samarth777.github.io/">Samarth P</a> &middot; Built with pure HTML/JS &amp; verified experimental artifacts.</span>
-        <span>Inspired by <a href="https://papail.io/papers/wsm/" target="_blank" rel="noopener">Weight-Space Micromachines</a>.</span>
-      </footer>
-    </main>
-  </div>
+<footer>
+  <span>© 2026 <a href="https://samarth777.github.io/">Samarth P</a></span>
+  <span>Inspired by <a href="https://papail.io/papers/wsm/">Weight-Space Micromachines</a></span>
+</footer>
 
-  <!-- Lightbox overlay for figures -->
-  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Zoomed figure">
-    <img id="lightbox-img" src="" alt="">
-  </div>
+<div class="lb" id="lb"><img alt=""></div>
 
-  <script>
-    // 1. Reading progress bar & active TOC highlighting
-    const progressBar = document.getElementById('progress-bar');
-    const tocLinks = Array.from(document.querySelectorAll('#toc-nav a'));
-    const headings = tocLinks
-      .map(a => document.querySelector(a.getAttribute('href')))
-      .filter(Boolean);
+<script src="assets/data.js"></script>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const SPL=window.QWEN_SPLITS||{};
+const clean=s=>(s||'').toLowerCase().replace(/[^a-z]/g,'');
 
-    function onScroll() {
-      const h = document.documentElement;
-      const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight || 1)) * 100;
-      progressBar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+/* progress + toc */
+const wides=$$('.wide'); const toc=$('#toc'), tl=$$('#toc a'), hs=tl.map(a=>$(a.getAttribute('href')));
+function onScroll(){
+  const d=document.documentElement, y=d.scrollTop;
+  $('#progress').style.width=(y/(d.scrollHeight-d.clientHeight)*100)+'%';
+  toc.classList.toggle('show', y > $('#blind').offsetTop-400);
+  let cur=0; hs.forEach((h,i)=>{ if(h.getBoundingClientRect().top<140) cur=i; });
+  tl.forEach((a,i)=>a.classList.toggle('on',i===cur));
+  const tr=toc.getBoundingClientRect();
+  toc.classList.toggle('hide', wides.some(el=>{const r=el.getBoundingClientRect();return r.left<tr.right && r.bottom>tr.top && r.top<tr.bottom;}));
+}
+addEventListener('scroll',onScroll,{passive:true}); onScroll();
 
-      let current = headings[0];
-      for (const el of headings) {
-        if (el.getBoundingClientRect().top <= 120) current = el;
-      }
-      tocLinks.forEach(a => {
-        a.classList.toggle('active', current && a.getAttribute('href') === '#' + current.id);
-      });
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+/* lightbox */
+const lb=$('#lb');
+$$('figure img').forEach(im=>im.onclick=()=>{lb.firstElementChild.src=im.src;lb.classList.add('open')});
+lb.onclick=()=>lb.classList.remove('open');
+addEventListener('keydown',e=>{if(e.key==='Escape')lb.classList.remove('open')});
 
-    // 2. Click-to-zoom figure lightbox
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = document.getElementById('lightbox-img');
-    document.querySelectorAll('figure img').forEach(img => {
-      img.addEventListener('click', () => {
-        lightboxImg.src = img.src;
-        lightboxImg.alt = img.alt;
-        lightbox.classList.add('open');
-      });
-    });
-    lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') lightbox.classList.remove('open');
-    });
+/* bibtex */
+$('#bib-copy').onclick=e=>navigator.clipboard.writeText($('#bib').textContent).then(()=>{e.target.textContent='Copied';setTimeout(()=>e.target.textContent='Copy',1400)});
 
-    // 3. Copy BibTeX
-    const copyBtn = document.getElementById('copy-bib');
-    copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(document.getElementById('bib-code').textContent).then(() => {
-        copyBtn.textContent = 'Copied!';
-        setTimeout(() => (copyBtn.textContent = 'Copy BibTeX'), 1600);
-      });
-    });
+/* fallback split for words not in the table */
+function fallbackSplit(w){const o=[],z=[4,3,5,3];let i=0,k=0;while(i<w.length){o.push(w.slice(i,i+z[k++%4]));i+=z[(k-1)%4];}return o;}
+function qwenSplit(w){ return SPL[w] ? {toks:SPL[w][0], ids:SPL[w][1], real:true} : {toks:fallbackSplit(w), ids:null, real:false}; }
 
-    // 4. Interactive BPE X-Ray Inspector
-    const CANON_SPLITS = {
-      strawberry: ['str', 'aw', 'berry'],
-      mississippi: ['miss', 'iss', 'ippi'],
-      bookkeeper: ['book', 'keep', 'er'],
-      chrysanthemum: ['ch', 'rys', 'anth', 'emum'],
-      unbelievable: ['un', 'bel', 'ievable'],
-      accommodation: ['ac', 'commod', 'ation']
-    };
+/* HERO */
+function hero(anim){
+  const w=clean($('#h-word').value)||'strawberry', q=clean($('#h-letter').value)[0]||'r';
+  const {toks,ids,real}=qwenSplit(w), st=$('#h-stage');
+  st.innerHTML=toks.map((t,i)=>`<div class="tok"><div class="scan"></div><div class="face">${t}</div><div class="cells">${[...t].map(c=>`<span class="${c===q?'q':''}">${c}</span>`).join('')}</div><div class="id">${ids?ids[i]:'·'}</div></div>`).join('');
+  const on=st.classList.contains('on'), n=[...w].filter(c=>c===q).length;
+  $('#h-readout').innerHTML = on
+    ? `<span>tokens <b>${toks.length}</b></span><span>length <b>${w.length}</b></span><span class="big">count('${q}') <b>${n}</b></span>`
+    : `<span>input_ids <b>[${ids?ids.join(', '):'…'}]</b></span><span class="big">count('${q}') <b>?</b></span>`;
+  $('#h-foot').innerHTML = real
+    ? 'Real <code>Qwen3-0.6B-Base</code> tokenization. With X-ray off, this is all Layer 0 gets: integer IDs. With it on, you see what <code>tokenizer.json</code> already knows about each one.'
+    : 'This word isn\'t in our precomputed Qwen3 table, so the split shown is only illustrative. Try one of the suggestions.';
+}
+$('#h-toggle').onclick=e=>{const st=$('#h-stage');st.classList.toggle('on');e.target.classList.toggle('on');e.target.textContent=st.classList.contains('on')?'X-ray on':'X-ray off';hero();};
+['#h-word','#h-letter'].forEach(s=>$(s).oninput=()=>hero());
+/* start "off", flip on after a beat for the reveal */
+$('#h-stage').classList.remove('on');$('#h-toggle').classList.remove('on');$('#h-toggle').textContent='X-ray off';hero();
+const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){setTimeout(()=>$('#h-toggle').click(),700);io.disconnect();}});io.observe($('#hero'));
 
-    let advSeed = 17;
-    function pseudoRand() {
-      advSeed = (advSeed * 1664525 + 1013904223) % 4294967296;
-      return advSeed / 4294967296;
-    }
+/* INSPECTOR */
+let seed=11; const rnd=()=>(seed=(seed*1664525+1013904223)%4294967296)/4294967296;
+function reSplit(w,canon){for(let a=0;a<10;a++){const o=[];let i=0;while(i<w.length){const s=1+Math.floor(rnd()*Math.min(4,w.length-i));o.push(w.slice(i,i+s));i+=s;}if(o.join('|')!==canon.join('|'))return o;}return[w[0],w.slice(1)];}
+function chips(el,toks,q){
+  el.innerHTML=toks.map((t,i)=>{const seam=i>0&&toks[i-1].slice(-1)===t[0]?`<span class="seam">${t[0]}${t[0]}</span>`:'';
+    return seam+`<span class="chip">${[...t].map(c=>c===q?`<span class="q">${c}</span>`:c).join('')}</span>`}).join('');
+}
+function hist(el,toks,q){
+  const h=Array(26).fill(0); toks.forEach(t=>[...t].forEach(c=>h[c.charCodeAt(0)-97]++)); const mx=Math.max(1,...h);
+  el.innerHTML=h.map((v,i)=>{const c=String.fromCharCode(97+i);return `<div class="${c===q?'q':''} ${v?'has':''}" title="${c}: ${v}"><i style="height:${v/mx*100}%"></i><span>${c}</span></div>`}).join('');
+  return h;
+}
+function insp(roll){
+  const w=clean($('#i-word').value)||'bookkeeper', q=clean($('#i-letter').value)[0]||w[0];
+  if(roll) seed+=97;
+  const {toks:a,real}=qwenSplit(w), b=reSplit(w,a);
+  $('#i-l1').textContent=real?'Qwen3 tokenization':'Example tokenization';
+  $('#i-n1').textContent=a.length+' tok'; $('#i-n2').textContent=b.length+' tok';
+  chips($('#i-c1'),a,q); chips($('#i-c2'),b,q);
+  const h1=hist($('#i-h1'),a,q), h2=hist($('#i-h2'),b,q);
+  const dmax=Math.max(...h1.map((v,i)=>Math.abs(v-h2[i])));
+  let dbl=0; for(let i=1;i<w.length;i++) if(w[i]===w[i-1]) dbl=1;
+  $('#i-diff').innerHTML=`<span>len <b>${w.length}</b></span><span>matched_cnt('${q}') <b>${h1[q.charCodeAt(0)-97]}</b></span><span>double <b>${dbl}</b></span><span>first <b>${w[0]}</b> · last <b>${w.at(-1)}</b></span><span class="ok">max |Δ| = ${dmax.toFixed(1)}</span>`;
+}
+['#i-word','#i-letter'].forEach(s=>$(s).oninput=()=>insp());
+$('#i-roll').onclick=()=>insp(true); insp();
 
-    function heuristicCanon(w) {
-      if (CANON_SPLITS[w]) return CANON_SPLITS[w];
-      if (w.length <= 3) return [w];
-      const out = [];
-      let i = 0;
-      const sizes = [3, 2, 4, 3, 2, 3];
-      let k = 0;
-      while (i < w.length) {
-        const step = Math.min(w.length - i, sizes[k % sizes.length]);
-        out.push(w.slice(i, i + step));
-        i += step;
-        k++;
-      }
-      return out;
-    }
+/* ALU CONSOLE */
+const D=window.ALU_DEMOS||{};
+const TABS=[['strawberry',null],['count','count_real'],['len','length_real'],['nth','nth_real'],['spell','spell_real'],['reverse','reverse_real'],['rot13','rot13_real'],['nonce','reverse_nonce'],['multi-word','count_multiword']];
+let tIdx={}, timer=null;
+$('#a-tabs').innerHTML=TABS.map((t,i)=>`<button class="xbtn ${i?'':'on'}" data-i="${i}">${t[0]}</button>`).join('');
+$$('#a-tabs button').forEach(b=>b.onclick=()=>{$$('#a-tabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');runTab(+b.dataset.i);});
+function runTab(i){
+  clearTimeout(timer);
+  const [name,key]=TABS[i];
+  $('#a-vs').style.display=key?'none':'grid'; $('#a-term').style.display=key?'block':'none';
+  if(!key) return;
+  const list=D[key]||[]; tIdx[key]=((tIdx[key]??-1)+1)%list.length;
+  const ex=list[tIdx[key]], term=$('#a-term');
+  let k=0;
+  (function step(){
+    const typed=ex.o.slice(0,k);
+    term.innerHTML=`<div class="ln"><span class="p">${ex.p}</span><span class="w">${typed}</span><span class="cur"></span></div>
+      <div class="meta" style="margin-top:12px">${key.replace('_',' · ')} · ALU wrote ${ex.o.length} char${ex.o.length>1?'s':''} · then silent. Click the tab again for another word.</div>`;
+    if(k++<ex.o.length) timer=setTimeout(step,ex.o.length>6?55:220);
+  })();
+}
 
-    function randomSplit(w, canon) {
-      if (w.length <= 1) return [w];
-      for (let attempt = 0; attempt < 8; attempt++) {
-        const out = [];
-        let i = 0;
-        while (i < w.length) {
-          const maxStep = Math.min(w.length - i, Math.max(1, Math.min(4, w.length - 1)));
-          const step = 1 + Math.floor(pseudoRand() * maxStep);
-          out.push(w.slice(i, i + step));
-          i += step;
-        }
-        if (out.join('|') !== canon.join('|')) return out;
-      }
-      return [w.slice(0, 1), w.slice(1)];
-    }
-
-    function renderTokens(container, tokens, qChar) {
-      container.innerHTML = '';
-      tokens.forEach((tok, idx) => {
-        if (idx > 0) {
-          const prevLast = tokens[idx - 1].slice(-1);
-          const curFirst = tok[0];
-          if (prevLast && prevLast === curFirst) {
-            const seam = document.createElement('span');
-            seam.className = 'seam-pill';
-            seam.textContent = 'seam:' + prevLast + curFirst;
-            seam.title = 'Detected algebraically by (prev_last · first_a) = 1.0';
-            container.appendChild(seam);
-          }
-        }
-        const cnt = [...tok].filter(c => c === qChar).length;
-        const chip = document.createElement('span');
-        chip.className = 'token-chip';
-        chip.innerHTML = `<span>"${tok}"</span><span class="sub">len=${tok.length} &middot; ${qChar}:${cnt}</span>`;
-        container.appendChild(chip);
-      });
-    }
-
-    function updateXray(reroll) {
-      const wordEl = document.getElementById('xray-word');
-      const letEl = document.getElementById('xray-letter');
-      let w = (wordEl.value || 'strawberry').toLowerCase().replace(/[^a-z]/g, '');
-      if (!w) w = 'strawberry';
-      let q = (letEl.value || 'r').toLowerCase().replace(/[^a-z]/g, '');
-      if (!q) q = w[0];
-
-      if (reroll) advSeed += 97;
-      const canon = heuristicCanon(w);
-      const adv = randomSplit(w, canon);
-
-      document.getElementById('canon-count').textContent = canon.length + ' tok' + (canon.length > 1 ? 's' : '');
-      document.getElementById('adv-count').textContent = adv.length + ' tok' + (adv.length > 1 ? 's' : '');
-      renderTokens(document.getElementById('canon-tokens'), canon, q);
-      renderTokens(document.getElementById('adv-tokens'), adv, q);
-
-      const qCnt = [...w].filter(c => c === q).length;
-      let hasDbl = false;
-      for (let i = 1; i < w.length; i++) if (w[i] === w[i - 1]) hasDbl = true;
-      const nthIdx = Math.min(3, w.length);
-
-      document.getElementById('xray-metrics').innerHTML = `
-        <span>w_len = ${w.length}</span>
-        <span>matched_cnt('${q}') = ${qCnt}</span>
-        <span>w_dbl = ${hasDbl ? '1.0 (Yes)' : '0.0 (No)'}</span>
-        <span>w_first = '${w[0]}'</span>
-        <span>w_last = '${w[w.length - 1]}'</span>
-        <span>pos[${nthIdx}] = '${w[nthIdx - 1]}'</span>
-      `;
-    }
-
-    document.getElementById('xray-word').addEventListener('input', () => updateXray(false));
-    document.getElementById('xray-letter').addEventListener('input', () => updateXray(false));
-    document.getElementById('xray-resplit').addEventListener('click', () => updateXray(true));
-    document.querySelectorAll('[data-preset]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const [w, l] = btn.dataset.preset.split(',');
-        document.getElementById('xray-word').value = w;
-        document.getElementById('xray-letter').value = l;
-        updateXray(true);
-      });
-    });
-    updateXray(false);
-
-    // 5. Interactive Optical Illusion Lab (100% real recorded JSON predictions!)
-    const ILLUSION_DATA = {
-      v2_frozen: {
-        name: 'BPE-V2 Word Retina (100% Frozen Host)',
-        fid: 88.0,
-        preds: { '-2': '1', '-1': '2', '0': '3', '1': '3', '2': '3', '3': '3' },
-        note: (d) => d <= 0
-          ? `Retina injects ${d} into F_retina['r'] on "berry" → WordRetinaScanner outputs matched_cnt = ${3 + d}, and the 100% frozen Qwen3-0.6B faithfully predicts '${3 + d}' on identical text!`
-          : `Retina outputs matched_cnt = ${3 + d}, which exceeds the 0..3 count buckets seen in single-word English training, so the frozen readout saturates at '3'. (Across 25 words in 0..3, fidelity is 88%.)`
-      },
-      v2_lora: {
-        name: 'BPE-V2 Word Retina + LoRA',
-        fid: 94.0,
-        preds: { '-2': '1', '-1': '2', '0': '3', '1': '2', '2': '2', '3': '2' },
-        note: (d) => d <= 0
-          ? `Tracks the optical illusion cleanly on identical tokens ('${3 + d}'). Systematic 25-word fidelity reaches 94.0% (47/50).`
-          : `Count ${3 + d} lies above the trained single-word count buckets 0..3, so the readout falls back outside its calibrated range. (Within 0..3 across 25 words: 94.0% fidelity.)`
-      },
-      v1_frozen: {
-        name: 'Generic Mid-Layer V1 (Frozen Host)',
-        fid: 16.0,
-        preds: { '-2': '3', '-1': '3', '0': '3', '1': '3', '2': '3', '3': '3' },
-        note: () => `Generic cross-attention never learned reliable subword aggregation: it ignores the perturbation completely and stays stuck at '3' (16% systematic fidelity).`
-      },
-      l0_lora: {
-        name: 'Naive Layer-0 Retina + LoRA',
-        fid: 10.0,
-        preds: { '-2': '3', '-1': '3', '0': '3', '1': '3', '2': '3', '3': '3' },
-        note: () => `LoRA completely bypassed the Layer-0 retina and memorized "strawberry" → '3' in host weights (only -2.4 pt blindfold drop and 10% illusion fidelity).`
-      }
-    };
-
-    let activeArch = 'v2_frozen';
-    function updateIllusion() {
-      const d = parseInt(document.getElementById('ill-slider').value, 10);
-      const target = String(3 + d);
-      const cfg = ILLUSION_DATA[activeArch];
-      const pred = cfg.preds[String(d)];
-      const followed = pred === target;
-
-      document.getElementById('ill-delta-badge').textContent = `δ = ${d >= 0 ? '+' + d : d}`;
-      document.getElementById('ill-target').textContent = target;
-      const predEl = document.getElementById('ill-pred');
-      predEl.textContent = `'${pred}'`;
-      predEl.className = 'pred-big ' + (followed ? 'hit' : 'miss');
-      document.getElementById('ill-status').innerHTML = followed
-        ? '<span style="color:#047857;font-weight:700;">&#10003; Followed illusion</span>'
-        : '<span style="color:#b91c1c;font-weight:600;">&#10007; Did not follow</span>';
-      document.getElementById('ill-explain').textContent = cfg.note(d);
-      document.getElementById('ill-fid-txt').textContent = cfg.fid.toFixed(1) + '%';
-      document.getElementById('ill-fid-bar').style.width = cfg.fid + '%';
-    }
-
-    document.getElementById('ill-slider').addEventListener('input', updateIllusion);
-    document.querySelectorAll('[data-arch]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('[data-arch]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        activeArch = btn.dataset.arch;
-        updateIllusion();
-      });
-    });
-    updateIllusion();
-  </script>
+/* ILLUSION */
+const ILL={
+  v2_frozen:{fid:88,p:{'-2':'1','-1':'2','0':'3','1':'3','2':'3','3':'3'},n:d=>d<=0?`The retina now reports ${3+d} r's, and the frozen model says '${3+d}' on unchanged text.`:`Target ${3+d} is above the counts typical of single-word training data, so the readout saturates at '3'.`},
+  v2_lora:{fid:94,p:{'-2':'1','-1':'2','0':'3','1':'2','2':'2','3':'2'},n:d=>d<=0?`Follows the edited retina ('${3+d}') on unchanged tokens.`:`Target ${3+d} is above the counts typical of single-word training data, so the readout falls back.`},
+  v1_frozen:{fid:16,p:{'-2':'3','-1':'3','0':'3','1':'3','2':'3','3':'3'},n:()=>`Generic cross-attention ignores the edit and always answers '3'.`},
+  l0_lora:{fid:10,p:{'-2':'3','-1':'3','0':'3','1':'3','2':'3','3':'3'},n:()=>`LoRA bypassed the Layer-0 retina and memorized "strawberry → 3" in the host weights.`}
+};
+let arch='v2_frozen';
+function ill(){
+  const d=+$('#o-d').value, c=ILL[arch], p=c.p[d], tgt=String(3+d), ok=p===tgt;
+  $('#o-dv').textContent=(d>0?'+':d<0?'−':'')+Math.abs(d);
+  $('#o-p').textContent=p; $('#o-p').className='pred '+(ok?'y':'n');
+  $('#o-s').innerHTML=`illusion target <b style="color:var(--xr-ink)">${tgt}</b> · ${ok?'<span style="color:var(--xr-glow)">followed</span>':'<span style="color:#f87171">not followed</span>'}`;
+  $('#o-f').textContent=c.fid+'%'; $('#o-m').style.width=c.fid+'%'; $('#o-n').textContent=c.n(d);
+}
+$('#o-d').oninput=ill;
+$$('#o-arch button').forEach(b=>b.onclick=()=>{$$('#o-arch button').forEach(x=>x.classList.remove('on'));b.classList.add('on');arch=b.dataset.a;ill();});
+ill();
+</script>
 </body>
 </html>
