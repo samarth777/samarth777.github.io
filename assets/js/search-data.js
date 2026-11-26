@@ -37,15 +37,15 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/cv/";
           },
-        },{id: "post-bpe-x-ray-vision-weight-space-character-organs-for-token-blind-llms",
+        },{id: "post-",
         
-          title: "BPE X-Ray Vision: Weight-Space Character Organs for Token-Blind LLMs",
+          title: "",
         
-        description: "Compiling character-level perception directly out of tokenizer.json into a frozen LLM&#39;s weights—a zero-training 100% exact X-Ray ALU and a continuous BPE-invariant Word Retina with 88–94% optical illusion fidelity.",
+        description: "",
         section: "Posts",
         handler: () => {
           
-            window.location.href = "/bpe-xray/";
+            window.location.href = "/blog/2026/2026-11-25-bpe-xray/";
           
         },
       },{id: "post-posters-i-liked-at-icml-2026",
