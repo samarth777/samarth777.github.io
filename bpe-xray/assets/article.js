@@ -191,7 +191,7 @@ const letters = s => [...s.toLowerCase()].filter(c => c >= 'a' && c <= 'z');
     const sl = H('div', {}, top); H('div', { class: 'slots-l', text: 'E_alpha_chars [16]' }, sl);
     const slots = H('div', { class: 'slots' }, sl);
     for (let i = 0; i < 16; i++) { const v = alphas[i]; H('span', { class: v ? '' : 'e', text: v ? String.fromCharCode(96 + v) : '0' }, slots); }
-    const SEGC = { count: ['--x-retina', 'letter counts'], fl: ['--x-lora', 'first / last letter'], pos: ['--x-alu', 'first six / last four letters'], scalar: ['--x-sky', 'scalars'] };
+    const SEGC = { count: ['--x-retina', 'letter counts'], fl: ['--x-sky', 'first / last letter'], pos: ['--x-alu', 'first six / last four letters'], scalar: ['--x-mauve', 'scalars'] };
     const lg = H('div', { class: 'seglegend' }, host); Object.values(SEGC).forEach(([c, n]) => { const sp = H('span', {}, lg); const i = H('i', {}, sp); i.style.background = `var(${c})`; sp.appendChild(document.createTextNode(n)); });
     const ro = H('div', { class: 'anat-readout', text: 'Hover a cell to see what it encodes.' }, host);
     const bc = H('div', { class: 'barcode' }, host);
@@ -209,7 +209,7 @@ const letters = s => [...s.toLowerCase()].filter(c => c >= 'a' && c <= 'z');
         const idx = s.a + j, v = F[idx];
         const x = lw + (s.kind === 'count' ? j + 1 : j) * (cw + gap);
         let fill = 'var(--x-card)', op = 1;
-        const segC = s.kind === 'count' ? '--x-retina' : s.kind === 'scalar' ? '--x-sky' : s.grp ? '--x-alu' : '--x-lora';
+        const segC = s.kind === 'count' ? '--x-retina' : s.kind === 'scalar' ? '--x-mauve' : s.grp ? '--x-alu' : '--x-sky';
         if (s.kind === 'count') { if (v) { fill = String.fromCharCode(97 + j) === 'r' ? 'var(--x-amber)' : `var(${segC})`; op = Math.min(1, .55 + .25 * v); } }
         else if (s.kind === 'scalar') { if (v) { fill = `var(${segC})`; op = Math.min(1, .3 + v); } }
         else if (v) { fill = j === 0 ? 'var(--x-ink-3)' : `var(${segC})`; }

@@ -4,7 +4,7 @@
    (pink #E5B4C6 · mauve #DCC3D6 · lavender #C6BED8 · periwinkle #AFBAD3 · sky #BCD7E2),
    deepened for marks and text. Semantic roles:
    Word Retina = periwinkle blue · Retina+LoRA = light blue · ALU = lavender ·
-   LoRA baseline = pink · interventions / query letters = peach · frozen & baselines = grey-lavender */
+   LoRA baseline = pink · interventions / query letters = rose · frozen & baselines = grey-lavender */
 :root{
   --x-ink: #2E2A38;
   --x-ink-2: #625C70;
@@ -17,9 +17,9 @@
   --x-grid: rgba(46,42,56,.06);
   --x-id: #9A94A6;
   --x-letter: #2E2A38;
-  --x-amber: #F0A777;
-  --x-amber-ink: #B5612A;
-  --x-amber-wash: #FDF0E6;
+  --x-amber: #E07A9E;
+  --x-amber-ink: #B3456F;
+  --x-amber-wash: #FCEEF3;
   --x-retina: #4E76C8;
   --x-retina-ink: #3E63B0;
   --x-retina-wash: #EAF0FB;
@@ -31,6 +31,7 @@
   --x-lora-ink: #B4527A;
   --x-lora-wash: #FBEEF4;
   --x-sky: #7FBFD3;
+  --x-mauve: #C39BC8;
   --x-sky-wash: #EDF6F8;
   --x-v1: #8F8B9C;
   --x-l0: #B9B3C6;
@@ -52,9 +53,9 @@ html[data-theme="dark"]{
   --x-grid: rgba(255,255,255,.07);
   --x-id: #9A94A6;
   --x-letter: #F2EFF8;
-  --x-amber: #F3B98F;
-  --x-amber-ink: #F6C49F;
-  --x-amber-wash: rgba(243,185,143,.16);
+  --x-amber: #EE9BBB;
+  --x-amber-ink: #F4B5CD;
+  --x-amber-wash: rgba(238,155,187,.15);
   --x-retina: #8FA9E8;
   --x-retina-ink: #A9BEF0;
   --x-retina-wash: rgba(143,169,232,.16);
@@ -66,6 +67,7 @@ html[data-theme="dark"]{
   --x-lora-ink: #F2B4D0;
   --x-lora-wash: rgba(235,156,192,.14);
   --x-sky: #8FCBDD;
+  --x-mauve: #C9A6D0;
   --x-sky-wash: rgba(143,203,221,.13);
   --x-v1: #9A94A6;
   --x-l0: #6E687B;
@@ -364,7 +366,7 @@ html[data-theme="dark"] .knob .kn{background:var(--x-card)}
 
 /* figure 1 bench */
 .bench .cell{border-top:3px solid var(--x-paper-edge);padding-top:12px}
-.bench .cell:nth-child(1){border-top-color:#C9D7F3}.bench .cell:nth-child(2){border-top-color:#DDD3F3}.bench .cell:nth-child(3){border-top-color:#F2CFDF}.bench .cell:nth-child(4){border-top-color:#C8E3EB}.bench .cell:nth-child(5){border-top-color:#F6D9C4}
+.bench .cell:nth-child(1){border-top-color:#C9D7F3}.bench .cell:nth-child(2){border-top-color:#DDD3F3}.bench .cell:nth-child(3){border-top-color:#F2CFDF}.bench .cell:nth-child(4){border-top-color:#C8E3EB}.bench .cell:nth-child(5){border-top-color:#E9D3E6}
 .bench .ex span{border-radius:6px;border-color:var(--x-paper-edge)}
 .bench .ex span.dbl{border-color:var(--x-sky);background:var(--x-sky-wash);box-shadow:none}
 
@@ -398,7 +400,7 @@ html[data-theme="dark"] .knob .kn{background:var(--x-card)}
 .arch3 .am b{font-size:18px}
 .arch3 .verdict{display:inline-block;font:600 10.5px/1 var(--x-mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;margin-bottom:10px}
 .arch3 .verdict.no{background:var(--x-lora-wash);color:var(--x-lora-ink)}
-.arch3 .verdict.meh{background:var(--x-amber-wash);color:var(--x-amber-ink)}
+.arch3 .verdict.meh{background:var(--x-alu-wash);color:var(--x-alu-ink)}
 .arch3 .verdict.yes{background:var(--x-retina-wash);color:var(--x-retina-ink)}
 .arch3 svg text,.diagram text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
 .diagram{overflow-x:auto}
