@@ -139,24 +139,15 @@ h3{font:600 19.5px/1.35 var(--sans);letter-spacing:-.012em;margin:2.2em 0 .5em;s
 .wide{width:min(var(--wide),calc(100vw - 32px));position:relative;left:50%;transform:translateX(-50%)}
 .fw{width:min(var(--fig),calc(100vw - 32px));position:relative;left:50%;transform:translateX(-50%)}
 
-/* tldr / stats / glossary */
-.tldr{margin:0 0 30px}
-.tldr .h{font:600 12px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
-.tldr ol{padding-left:1.2em;margin:0}
-.tldr li{margin-bottom:.6em}
+/* findings / stats */
+ul.findings{padding-left:1.1em;margin:0 0 1.2em}
+ul.findings li{margin-bottom:.75em}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);margin:34px 0 10px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
 .stat{padding:18px 14px 16px;border-left:1px solid var(--rule)}
 .stat:first-child{border-left:0;padding-left:0}
 .stat .n{font:600 28px/1.1 var(--sans);letter-spacing:-.03em}
 .stat .l{font:400 12.5px/1.45 var(--sans);color:var(--ink-3);margin-top:6px}
-.gloss{margin:36px 0;border:1px solid var(--rule);border-radius:12px;padding:20px 24px 8px;background:var(--bg-2)}
-.gloss .h{font:600 12px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
-.gloss dl{margin:0;display:grid;grid-template-columns:150px 1fr;gap:0 18px;font:400 15px/1.55 var(--sans);color:var(--ink-2)}
-.gloss dt{font-weight:600;color:var(--ink);padding:8px 0;border-top:1px solid var(--rule)}
-.gloss dd{margin:0;padding:8px 0;border-top:1px solid var(--rule)}
-.gloss dt:first-of-type,.gloss dd:first-of-type{border-top:0}
-@media (max-width:640px){.gloss dl{grid-template-columns:1fr}.gloss dd{border-top:0;padding-top:0}.stats{grid-template-columns:1fr 1fr}.stat:nth-child(3){border-left:0;padding-left:0}.stat:nth-child(n+3){border-top:1px solid var(--rule)}}
-
+@media (max-width:640px){.stats{grid-template-columns:1fr 1fr}.stat:nth-child(3){border-left:0;padding-left:0}.stat:nth-child(n+3){border-top:1px solid var(--rule)}}
 /* side notes */
 .sn{font:400 13.5px/1.55 var(--sans);color:var(--ink-3)}
 @media (min-width:1300px){.sn{float:right;clear:right;width:220px;margin-right:-264px;margin-top:.4em;position:relative}}
@@ -370,7 +361,7 @@ footer{max-width:var(--col);margin:0 auto;padding:28px 24px 60px;border-top:1px 
   <div class="hero-in">
     <div class="kicker">Research note · Character perception in LLMs</div>
     <h1>BPE X-Ray Vision</h1>
-    <p class="dek">Language models can't see the letters inside their tokens, yet the spelling of every token is sitting in <code>tokenizer.json</code>. We read it out once and plug it into a frozen model, as an exact calculator and as a learned “Word Retina”.</p>
+    <p class="dek">LLMs can't see the characters inside their tokens, yet <code>tokenizer.json</code> spells out every one. We compile it into weight space: an exact ALU that needs no training, and a BPE-invariant Word Retina for a frozen host.</p>
 
     <div class="scope" id="hero-scope">
       <div class="scope-bar">
@@ -391,11 +382,11 @@ footer{max-width:var(--col);margin:0 auto;padding:28px 24px 60px;border-top:1px 
 
 <aside class="toc" id="toc" aria-label="Contents">
   <div class="t">Contents</div>
-  <a href="#problem"><span>01</span>Why models can't spell</a>
-  <a href="#idea"><span>02</span>Reading the tokenizer</a>
-  <a href="#alu"><span>03</span>Module 1: exact ALU</a>
-  <a href="#retina"><span>04</span>Module 2: Word Retina</a>
-  <a href="#causal"><span>05</span>Does it really see?</a>
+  <a href="#problem"><span>01</span>Token blindness</a>
+  <a href="#idea"><span>02</span>Compiling the tokenizer</a>
+  <a href="#alu"><span>03</span>An exact ALU</a>
+  <a href="#retina"><span>04</span>The Word Retina</a>
+  <a href="#causal"><span>05</span>Causal tests</a>
   <a href="#limits"><span>06</span>Limitations</a>
   <a href="#code"><span>07</span>Code &amp; citation</a>
 </aside>
@@ -404,84 +395,67 @@ footer{max-width:var(--col);margin:0 auto;padding:28px 24px 60px;border-top:1px 
 <div class="byline">
   <span><b>Samarth P</b></span>
   <span>November 25, 2026</span>
-  <span>14 min read</span>
+  <span>12 min read</span>
   <span class="sp"></span>
   <a href="https://github.com/samarth777/bpe-xray">GitHub</a>
   <a href="#cite">Cite</a>
 </div>
 
-<div class="tldr">
-  <div class="h">In short</div>
-  <ol>
-    <li><strong>The problem.</strong> A model reads <em>strawberry</em> as three chunks (<code>str</code>, <code>aw</code>, <code>berry</code>), never as letters. So it struggles to count the r's.</li>
-    <li><strong>The fix.</strong> The spelling of every chunk is already written down in the tokenizer file. We turn that into lookup tables once, then attach two small add-ons to a model whose own weights we never change.</li>
-    <li><strong>Add-on 1, the X-Ray ALU</strong>, is an exact calculator built by hand, with zero training. Called with a special tag, it takes Qwen3-0.6B from <strong>25% → 100%</strong> on spelling tasks. Without the tag it changes nothing at all.</li>
-    <li><strong>Add-on 2, the Word Retina</strong>, lets the model answer plain questions like “how many r's?” with no tags and no step-by-step working: <strong>97.1%</strong>, against 71.7% for standard fine-tuning (LoRA). Edit only what the retina reports, and the model's answer changes with it.</li>
-  </ol>
-</div>
+<p class="lede">Character-level failures in LLMs ("how many r's in <em>strawberry</em>?") are usually treated as a reasoning problem, fixed with chain-of-thought or a code tool. We argue they are a perception problem. The information is missing at the input, yet it is fully known ahead of time: <code>tokenizer.json</code> lists the exact spelling of every token.</p>
+
+<p>We compile that file into frozen lookup tensors and use them to build two weight-space modules for a frozen host model, in the spirit of <a href="https://papail.io/papers/wsm/">Weight-Space Micromachines</a>. Our main findings:</p>
+<ul class="findings">
+  <li><strong>An exact character ALU needs no training.</strong> A hand-compiled tensor circuit, invoked with <code>[XRAY op | text]=</code>, raises held-out 6-task accuracy from 25.0% to 100.0% on Qwen3-0.6B with 2-shot prompting, and transfers to Qwen3-1.7B and SmolLM2-1.7B. When no call is open, logits are bit-identical.</li>
+  <li><strong>A BPE-invariant “Word Retina” gives a frozen model character perception.</strong> With no tool syntax and no CoT, it reaches 97.1% on perceptual tasks with 6.47M trainable parameters, against 71.7% for an 11.35M-parameter LoRA. Prose perplexity shifts by +0.31 (LoRA: +5.08).</li>
+  <li><strong>Placement matters more than capacity.</strong> Injecting the same features at layer 0, or at mid-layers through generic cross-attention, mostly fails: the host routes around them. What works is precomputing word-level invariants and learning only the readout.</li>
+  <li><strong>The model really reads the retina.</strong> Ablating it collapses accuracy (−42.6 pts on real words, −56.2 on pseudowords). Editing only the retina's features, with identical input tokens, steers the answer 88% of the time (94% with LoRA), versus 8–16% for the failed designs.</li>
+</ul>
 
 <div class="stats" role="list">
-  <div class="stat" role="listitem"><div class="n">25 → 100%</div><div class="l">exact ALU on unseen words, zero training</div></div>
-  <div class="stat" role="listitem"><div class="n">97.1%</div><div class="l">Word Retina, frozen model (LoRA: 71.7%)</div></div>
-  <div class="stat" role="listitem"><div class="n">88%</div><div class="l">answers follow an edited retina (naive: 10%)</div></div>
-  <div class="stat" role="listitem"><div class="n">+0.31</div><div class="l">change in perplexity on normal text (LoRA: +5.08)</div></div>
+  <div class="stat" role="listitem"><div class="n">25 → 100%</div><div class="l">ALU, held-out words, 0 training</div></div>
+  <div class="stat" role="listitem"><div class="n">97.1%</div><div class="l">retina, frozen host (LoRA 71.7%)</div></div>
+  <div class="stat" role="listitem"><div class="n">88%</div><div class="l">illusion fidelity (layer-0: 10%)</div></div>
+  <div class="stat" role="listitem"><div class="n">+0.31</div><div class="l">prose ΔPPL (LoRA +5.08)</div></div>
 </div>
 
 <details class="mtoc"><summary>Contents</summary><ol>
-  <li><a href="#problem">Why models can't spell</a></li><li><a href="#idea">Reading the tokenizer</a></li><li><a href="#alu">Module 1: exact ALU</a></li><li><a href="#retina">Module 2: Word Retina</a></li><li><a href="#causal">Does it really see?</a></li><li><a href="#limits">Limitations</a></li><li><a href="#code">Code &amp; citation</a></li></ol></details>
-
-<div class="gloss">
-  <div class="h">Terms used in this post</div>
-  <dl>
-    <dt>Token</dt><dd>A chunk of text the model reads as one unit, e.g. <code>berry</code>. The model sees only its ID number.</dd>
-    <dt>BPE</dt><dd>Byte-Pair Encoding, the usual way text is cut into tokens.</dd>
-    <dt>Frozen model</dt><dd>A model whose original weights are never changed. We only add small new parts beside it.</dd>
-    <dt>LoRA</dt><dd>A standard, cheap way to fine-tune a model. It changes the model's behaviour directly and is our main baseline.</dd>
-    <dt>Made-up words</dt><dd>Random letter strings such as <code>spurplitklad</code>. The model cannot have memorised their spelling.</dd>
-    <dt>Letter-reading tasks</dt><dd>Questions answered by looking at a word once: count a letter, length, the n-th letter, has a double letter.</dd>
-    <dt>Perplexity</dt><dd>How surprised a model is by normal text. A rise means we damaged its ordinary writing ability.</dd>
-  </dl>
-</div>
+  <li><a href="#problem">Token blindness</a></li><li><a href="#idea">Compiling the tokenizer</a></li><li><a href="#alu">An exact ALU</a></li><li><a href="#retina">The Word Retina</a></li><li><a href="#causal">Causal tests</a></li><li><a href="#limits">Limitations</a></li><li><a href="#code">Code &amp; citation</a></li></ol></details>
 
 <!-- ============ 01 ============ -->
 <section class="sec" id="problem">
 <span class="secnum">§ 01</span>
-<h2>Why language models can't spell</h2>
-<p class="lede">A model that can write a proof will still guess when you ask how many r's are in <em>strawberry</em>. The reason is how text is fed to it.</p>
+<h2>Token blindness</h2>
+<p><code>Qwen3-0.6B-Base</code> receives <em>strawberry</em> as <code>[495, 672, 15357]</code>, i.e. <code>str|aw|berry</code>. Counting r's requires having memorised the spelling of each of 151,936 vocabulary entries, then aggregating across arbitrary token boundaries. Chain-of-thought and code tools work around this. They don't address the fact that the missing information is static and available at build time.</p>
 
-<p>When <code>Qwen3-0.6B-Base</code> reads <em>strawberry</em>, it never receives ten letters. It receives three numbers, <code>[495, 672, 15357]</code>, one for each chunk. To count the r's, it would need to have memorised the spelling of all 151,936 chunks in its vocabulary, then add them up across chunk boundaries.</p>
-
-<p>The usual workarounds are to make the model spell the word out step by step, or to hand the question to a Python tool. Both accept that the model is blind to letters. But the spelling of every chunk is not a mystery. <strong>It is written down in the tokenizer file, and it never changes.</strong></p>
-
-<span class="sn"><a href="https://papail.io/papers/wsm/">Weight-Space Micromachines</a> (Papailiopoulos et al.) build small exact circuits directly out of weights and attach them to a frozen model.</span>
-<p>That led to the question behind this post:</p>
-<p class="pull">Can we read letter information straight out of <code>tokenizer.json</code> and give it to a frozen model, so it can “see” letters?</p>
-
-<h3>How we tested it</h3>
-<p>We built a benchmark where training and test words never overlap (<code>src/benchmarks.py</code>): 418 training words and 162 unseen test words. We also built harder test sets:</p>
+<p>To measure it, we built a strictly word-disjoint benchmark (<code>src/benchmarks.py</code>): 418 training words and 162 held-out English words. It also includes four stress sets:</p>
 <ul>
-  <li><strong>made-up words</strong> the model has never seen;</li>
-  <li><strong>compressed words</strong>, where long chunks are glued together so a 9–13 letter string becomes 3 tokens or fewer;</li>
-  <li><strong>split double letters</strong>, where the only double letter sits exactly on a token boundary (<code>bal|loon</code>);</li>
-  <li>two <strong>never-trained task types</strong>: counting a letter across several words, and spotting anagrams.</li>
+  <li>freshly generated <strong>pseudowords</strong>;</li>
+  <li><strong>compound pseudowords</strong>, glued BPE chunks that compress 9–13 characters into ≤3 tokens;</li>
+  <li><strong>cross-token doubles</strong>, where the only double letter straddles a token boundary;</li>
+  <li>two OOD tasks never seen in training: <strong>multi-word count</strong> and <strong>anagram detection</strong>.</li>
 </ul>
-<p>Out of the box, <code>Qwen3-0.6B-Base</code> scores <strong>19.1%</strong> across 7 tasks with no examples, and <strong>25.0%</strong> across 6 tasks with two examples in the prompt. On <code>reverse</code> and <code>rot13</code> it scores 0%.</p>
+<p>The frozen base model scores 19.1% zero-shot over 7 tasks and 25.0% 2-shot over 6, including 0% on <code>reverse</code> and <code>rot13</code>.</p>
 </section>
 
 <!-- ============ 02 ============ -->
 <section class="sec" id="idea">
 <span class="secnum">§ 02</span>
-<h2>Reading the spelling out of the tokenizer</h2>
-<p class="lede">The tokenizer is a fixed list mapping each ID to a short string. We read it once and turn it into three lookup tables.</p>
-
-<p>The tables live in <code>CharWeightBank</code> (<code>src/char_tables.py</code>). <var>V</var> is the vocabulary size.</p>
+<h2>Compiling the tokenizer</h2>
+<p>A tokenizer is a finite map from token ID to string. We read it once and compile a frozen <code>CharWeightBank</code> (<code>src/char_tables.py</code>):</p>
 <ul>
-  <li><code>E_hist [V, 26]</code>: how many of each letter a–z every token contains (7.9&nbsp;MB).</li>
-  <li><code>E_alpha_chars [V, 16]</code>: the letters of each token, in order, plus its length <code>E_alpha_len [V]</code>.</li>
-  <li><code>F_retina [V, 358]</code>: a richer description of each token. It holds the letter counts, first and last letters, first-5 and last-5 characters, lengths, whether it starts with a space, whether it contains a double letter, and case/digit flags.</li>
+  <li><code>E_hist [V, 26]</code>: case-insensitive letter counts per token (7.9&nbsp;MB in bf16).</li>
+  <li><code>E_alpha_chars [V, 16]</code>: ordered letter IDs, plus <code>E_alpha_len [V]</code>.</li>
+  <li><code>F_retina [V, 358]</code>: a per-token sensory vector covering:
+    <ul>
+      <li>the letter histogram;</li>
+      <li>first/last-letter one-hots;</li>
+      <li>first-5 and last-5 character one-hots;</li>
+      <li>raw and alphabetic length;</li>
+      <li>leading-space, internal-double and case/digit flags.</li>
+    </ul></li>
 </ul>
-<span class="sn">Building the tables takes 5.2 s for SmolLM2 and 12–29 s for Qwen3.</span>
-<p>After this step <strong>the tokenizer is never used again</strong>. Getting a token's letters is just a table lookup inside the model's normal computation, <code>F_retina[input_ids]</code>. Two add-ons are built on these tables.</p>
+<span class="sn">Compilation takes 5.2 s for SmolLM2 and 12–29 s for Qwen3.</span>
+<p>From then on the tokenizer is never called. A token's character anatomy is an embedding lookup inside the forward pass, <code>F_retina[input_ids]</code>, and both modules below are built on it.</p>
 
 <div class="lab wide arch" id="arch">
   <div class="lab-head">
@@ -543,7 +517,7 @@ footer{max-width:var(--col);margin:0 auto;padding:28px 24px 60px;border-top:1px 
       <path class="flow" d="M391 120V168"/>
       <rect class="box" x="300" y="172" width="230" height="56" rx="10"/>
       <text class="t1" x="415" y="196" text-anchor="middle">Word Retina</text>
-      <text class="t2" x="415" y="214" text-anchor="middle">joins chunks into whole-word features</text>
+      <text class="t2" x="415" y="214" text-anchor="middle">BPE-invariant word features</text>
       <path class="flow" id="tap16" d="M415 228V244"/>
     </g>
     <!-- alu path -->
@@ -563,7 +537,7 @@ footer{max-width:var(--col);margin:0 auto;padding:28px 24px 60px;border-top:1px 
 
 <div class="lab wide" id="insp" style="max-width:940px">
   <div class="lab-head">
-    <div class="lab-title">Same letters, different chunks <span class="badge ill"><i></i>Illustration · computed in your browser</span></div>
+    <div class="lab-title">Same bytes, different tokenizations <span class="badge ill"><i></i>Illustration · computed in your browser</span></div>
     <div class="ctrls">
       <input class="pin" type="text" id="i-word" value="bookkeeper" size="13" spellcheck="false" aria-label="Word">
       <input class="pin" type="text" id="i-letter" value="e" size="2" maxlength="1" style="text-align:center" aria-label="Letter">
@@ -575,29 +549,32 @@ footer{max-width:var(--col);margin:0 auto;padding:28px 24px 60px;border-top:1px 
     <div class="pane"><div class="plabel" style="display:flex;justify-content:space-between"><span>Random re-split</span><span id="i-n2"></span></div><div class="chips" id="i-c2"></div><div class="hist" id="i-h2"></div></div>
   </div>
   <div class="diff" id="i-diff"></div>
-  <div class="pfoot">Each row of bars is the whole-word letter count that the Word Retina builds up from <code>E_hist</code>. However you chop the word, the counts come out the same. Teal tags mark a double letter split across two chunks, which the retina detects by comparing one chunk's last letter with the next chunk's first. On the real 623-number retina state, the largest difference between <code>str|aw|berry</code> and <code>s|traw|ber|ry</code> is exactly <code>0.0</code>. The left column uses the real Qwen3 split for 600 benchmark words.</div>
+  <div class="pfoot">Bars show the word-level histogram the retina accumulates from <code>E_hist</code>. Teal tags mark cross-token doubles (<code>prev_last · first</code>). On the full 623-dim state, max |Δ| between <code>str|aw|berry</code> and <code>s|traw|ber|ry</code> is exactly <code>0.0</code>. Left: real Qwen3 tokenization (600 benchmark words).</div>
 </div>
 </section>
 
 <!-- ============ 03 ============ -->
 <section class="sec" id="alu">
 <span class="secnum">§ 03</span>
-<h2>Module 1: an exact calculator, with zero training</h2>
-<p class="lede">The X-Ray ALU (<code>src/xray_alu.py</code>) is a small circuit made only of fixed tensor operations, attached at the model's final normalisation layer. Nothing is trained.</p>
-
-<p>It works in three steps: <strong>read → compute → write</strong>. One rule is strict: <em>if no <code>[XRAY …]=</code> tag is open, the ALU passes the model's signal through untouched.</em> On normal text the model's output is therefore bit-for-bit identical to before.</p>
+<h2>An exact ALU, with zero training</h2>
+<p>The first module (<code>src/xray_alu.py</code>) is a pure-tensor circuit hooked onto the host's final RMSNorm. It follows the WSM read → compute → write recipe under one contract: <em>if no <code>[XRAY …]=</code> span is open, the hook returns the hidden state untouched</em>. Logits on prose, and on every step before the trigger, are therefore bit-identical.</p>
 <ul>
-  <li><strong>Read.</strong> Fixed lookups find the parts of the tag: <code>[XRAY</code>, the operation, an optional argument, <code>|</code>, and <code>]=</code>.</li>
-  <li><strong>Compute.</strong> <code>count</code> and <code>len</code> add up <code>E_hist</code> or <code>E_alpha_len</code> over the word. <code>nth</code>, <code>spell</code>, <code>reverse</code> and <code>rot13</code> use running lengths to find the right token and the right letter inside it. ROT13 is a fixed 26×26 table.</li>
-  <li><strong>Write.</strong> For every possible output character (digits, letters, <code>-</code>, newline) we pre-compute a direction <code>W_write[t]</code>. Adding <code>γ·W_write[t]</code> makes <code>t</code> the model's top prediction.</li>
+  <li><strong>Read.</strong> Vocabulary indicator vectors and lower-triangular prefix sums parse <code>[XRAY</code>, the op, an optional argument, <code>|</code>, and <code>]=</code>.</li>
+  <li><strong>Compute.</strong>
+    <ul>
+      <li><code>count</code> and <code>len</code> sum <code>E_hist</code> or <code>E_alpha_len</code> over the span.</li>
+      <li><code>nth</code>, <code>spell</code>, <code>reverse</code> and <code>rot13</code> select a token and an intra-token slot. They use cumulative lengths and ReLU indicator gates.</li>
+      <li>ROT13 is a fixed 26×26 permutation.</li>
+    </ul></li>
+  <li><strong>Write.</strong> For each output token <var>t</var> (digits, letters, <code>-</code>, newline), we solve a post-norm direction <code>W_write[t]</code> against <code>lm_head</code>, so that adding <code>γ·W_write[t]</code> makes <var>t</var> the argmax.</li>
 </ul>
 
-<span class="sn">Checked exact on every integer from 0 to 999. Python's <code>str(n)</code> is never used.</span>
-<p>Even turning a number into digits is done with ReLUs:</p>
-<pre><code><span class="k">def</span> <span class="f">relu_step</span>(x, t):      <span class="c"># 1 if whole number x >= t, else 0</span>
+<span class="sn">Verified exact on all integers 0–999. Python's <code>str(n)</code> is never called.</span>
+<p>Even decimal output is ReLU arithmetic:</p>
+<pre><code><span class="k">def</span> <span class="f">relu_step</span>(x, t):      <span class="c"># 1 iff integer x >= t</span>
     <span class="k">return</span> F.relu(x - (t - <span class="m">1</span>)) - F.relu(x - t)
 
-<span class="k">def</span> <span class="f">relu_eq_int</span>(x, k):    <span class="c"># 1 if whole number x == k, else 0</span>
+<span class="k">def</span> <span class="f">relu_eq_int</span>(x, k):    <span class="c"># 1 iff integer x == k</span>
     <span class="k">return</span> F.relu(<span class="m">1</span> - torch.abs(x - k))
 
 d_hundreds = sum(relu_step(n, <span class="m">100</span> * c) <span class="k">for</span> c <span class="k">in</span> range(<span class="m">1</span>, <span class="m">10</span>))
@@ -615,69 +592,68 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
     <div class="pane"><div class="plabel">+ X-Ray ALU</div><div style="margin-top:8px;color:#b9c8d1">[XRAY count r | strawberry]=</div><div class="out good">3</div></div>
   </div>
   <div class="term" id="a-term" style="display:none" aria-live="polite"></div>
-  <div class="pfoot">Highlighted characters were written by the ALU. Everything before <code>]=</code> was generated by the frozen model on its own. Qwen3-0.6B-Base, two examples in the prompt. From <code>results/alu_eval_Qwen_Qwen3-0.6B-Base.json</code>.</div>
+  <div class="pfoot">Highlighted characters were written by the ALU. Everything before <code>]=</code> was generated by the frozen model on its own. Qwen3-0.6B-Base, 2-shot. From <code>results/alu_eval_Qwen_Qwen3-0.6B-Base.json</code>.</div>
 </div>
 
-<h3>Does it work on other models?</h3>
-<p>We ran the same compiler on three models from two families, with different tokenizers. Each got two worked examples in the prompt to teach the tag format, with no training. We also checked the circuit directly on all 13 test sets.</p>
+<h3>Transfer across model families</h3>
+<p>We ran the same compiler on three models from two families with different tokenizers. Each was evaluated 2-shot, with in-context examples teaching only the tag format, and also as a direct-circuit check on all 13 suites.</p>
 
 <figure class="fig fw" id="f1">
   <div class="fig-head">
-    <div><div class="fig-title">Figure 1 · Accuracy with and without the X-Ray ALU</div><div class="fig-sub">Exact-match accuracy per task, two examples in the prompt, no training</div></div>
+    <div><div class="fig-title">Figure 1 · Accuracy with and without the X-Ray ALU</div><div class="fig-sub">Exact match per task, 2-shot, no training</div></div>
     <span class="fig-src"><i></i>Recorded · results/alu_eval_*.json</span>
   </div>
-  <div><span class="seg" data-k="model"><button class="on" data-v="Qwen3-0.6B">Qwen3-0.6B</button><button data-v="Qwen3-1.7B">Qwen3-1.7B</button><button data-v="SmolLM2-1.7B">SmolLM2-1.7B</button></span><span class="seg" data-k="split"><button class="on" data-v="real">Real words</button><button data-v="nonce">Made-up words</button></span></div>
+  <div><span class="seg" data-k="model"><button class="on" data-v="Qwen3-0.6B">Qwen3-0.6B</button><button data-v="Qwen3-1.7B">Qwen3-1.7B</button><button data-v="SmolLM2-1.7B">SmolLM2-1.7B</button></span><span class="seg" data-k="split"><button class="on" data-v="real">Real words</button><button data-v="nonce">Pseudowords</button></span></div>
   <div class="legend" data-legend></div>
   <div class="chart" data-chart></div>
-  <figcaption class="figcap"><b>Before vs. after, per task.</b> On Qwen3-0.6B, accuracy on unseen real words goes from 25.0% to 100.0% across all six tasks, including 0% → 100% on <code>reverse</code> and <code>rot13</code>. The same tables, built from each model's own tokenizer, transfer to Qwen3-1.7B and SmolLM2-1.7B.</figcaption>
+  <figcaption class="figcap"><b>Zero-training ALU.</b> On Qwen3-0.6B, held-out accuracy goes from 25.0% to 100.0% on all six tasks, including 0 → 100% on <code>reverse</code> and <code>rot13</code>. The compiler transfers to Qwen3-1.7B and SmolLM2-1.7B from each model's own <code>tokenizer.json</code>.</figcaption>
   <details class="data"><summary>Show data table</summary><div data-table></div></details>
 </figure>
 
 <div class="tbl fw" style="max-width:860px">
 <table>
-<thead><tr><th>Model</th><th class="r">Build time</th><th>Normal text unchanged</th><th class="r">Real words (6 tasks)</th><th class="r">Made-up words</th><th class="r">Multi-word</th><th class="r">Circuit alone</th></tr></thead>
+<thead><tr><th>Model</th><th class="r">Compile</th><th>Prose bit-identical</th><th class="r">Real (6 tasks)</th><th class="r">Pseudowords</th><th class="r">Multi-word</th><th class="r">Direct circuit</th></tr></thead>
 <tbody>
-<tr><td><code>Qwen3-0.6B-Base</code></td><td class="r">28.8 s</td><td>✓ bit-identical</td><td class="r"><span class="dim">25.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r"><span class="dim">22.3</span><span class="arrow">→</span><strong>92.0</strong></td><td class="r"><span class="dim">28.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r">100.0</td></tr>
-<tr><td><code>Qwen3-1.7B-Base</code></td><td class="r">12.6 s</td><td>✓ bit-identical</td><td class="r"><span class="dim">34.7</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r"><span class="dim">29.3</span><span class="arrow">→</span><strong>93.0</strong></td><td class="r"><span class="dim">34.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r">100.0</td></tr>
-<tr><td><code>SmolLM2-1.7B</code></td><td class="r">5.2 s</td><td>✓ bit-identical</td><td class="r"><span class="dim">29.7</span><span class="arrow">→</span><strong>99.7</strong></td><td class="r"><span class="dim">18.3</span><span class="arrow">→</span><strong>94.7</strong></td><td class="r"><span class="dim">30.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r">100.0</td></tr>
+<tr><td><code>Qwen3-0.6B-Base</code></td><td class="r">28.8 s</td><td>✓</td><td class="r"><span class="dim">25.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r"><span class="dim">22.3</span><span class="arrow">→</span><strong>92.0</strong></td><td class="r"><span class="dim">28.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r">100.0</td></tr>
+<tr><td><code>Qwen3-1.7B-Base</code></td><td class="r">12.6 s</td><td>✓</td><td class="r"><span class="dim">34.7</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r"><span class="dim">29.3</span><span class="arrow">→</span><strong>93.0</strong></td><td class="r"><span class="dim">34.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r">100.0</td></tr>
+<tr><td><code>SmolLM2-1.7B</code></td><td class="r">5.2 s</td><td>✓</td><td class="r"><span class="dim">29.7</span><span class="arrow">→</span><strong>99.7</strong></td><td class="r"><span class="dim">18.3</span><span class="arrow">→</span><strong>94.7</strong></td><td class="r"><span class="dim">30.0</span><span class="arrow">→</span><strong>100.0</strong></td><td class="r">100.0</td></tr>
 </tbody>
 </table>
 </div>
 
-<p>Why only 92–95% on made-up words, when the circuit itself is 100%? With only prompt examples, the base model sometimes copies an unfamiliar word into the tag wrongly, <em>before</em> the ALU runs. The ALU itself made no mistakes on any of the 13 test sets for any of the 3 models.</p>
+<p>The gap on pseudowords (92–95% vs. 100% direct) is entirely a copying error. Under 2-shot prompting, the base model sometimes mis-copies an unfamiliar string into the tag before the ALU fires. Once triggered, the ALU makes no errors on any of the 13 suites, on all three models.</p>
 </section>
 
 <!-- ============ 04 ============ -->
 <section class="sec" id="retina">
 <span class="secnum">§ 04</span>
-<h2>Module 2: a Word Retina for a frozen model</h2>
-<p class="lede">The ALU is exact, but you have to call it with a tag. We wanted something harder. Can a frozen model answer a plain question, like the one below, in its very next token, with no tag and no step-by-step working?</p>
-<pre style="background:var(--bg-2);color:var(--ink);border:1px solid var(--rule)"><code>How many times does the letter 'r' appear in 'strawberry'?
-Answer: <b style="color:var(--accent)">3</b></code></pre>
+<h2>The Word Retina</h2>
+<p>The ALU is exact, but it is a coprocessor you have to call. The harder question: can a <strong>100% frozen</strong> host answer <code>How many times does the letter 'r' appear in 'strawberry'?\nAnswer:</code> with its next token, with no tag and no CoT?</p>
 
-<h3>Two attempts that failed, and the clue</h3>
-<p>All designs used <code>Qwen3-0.6B-Base</code> and 4,096 training examples over 7 tasks: count, length, nth letter, double letter, delete, replace and reverse. The baseline is plain LoRA (rank 18, 11.35M trainable parameters).</p>
+<h3>Two designs that failed, and the clue</h3>
+<p>Every design was trained on <code>Qwen3-0.6B-Base</code> with 4,096 word-disjoint examples over 7 tasks: count, length, nth, double, delete, replace and reverse. The baseline is a parameter-matched LoRA (r = 18, 11.35M).</p>
 
 <div class="attempts">
-  <div class="att"><div class="tag no">Try 1<b>Failed</b></div><div><h4>Feed the letters in at the very first layer</h4>
-    <p>We added the <code>F_retina</code> features to the input embeddings, alongside LoRA (10.81M params). It scored 47.9% on real words and 58.1% on made-up words, slightly <em>worse</em> than plain LoRA (49.5 / 60.7). Removing the features at test time cost only 2.4 points, so the model was barely using them. At layer 0, <em>"berry"</em> doesn't yet know what question is being asked. LoRA found it easier to memorise spellings than to pass the new signal through 28 layers.</p></div></div>
-  <div class="att"><div class="tag meh">Try 2<b>Partly</b></div><div><h4>Let middle layers look the letters up (“V1”)</h4>
-    <p>We added small attention modules at layers 14, 20 and 24, where the model already knows the question. Now the model did depend on them: removing them cost 17.1 points. But accuracy stalled at 35.0%. These modules had to learn from just 4k examples how to join chunks into a whole word.</p></div></div>
-  <div class="att"><div class="tag yes">Clue<b>Key result</b></div><div><h4>One number stood out</h4>
-    <p>On split double letters, the one feature we had already joined across chunk boundaries for it, V1 with LoRA jumped to 78.8%. Removing the features dropped it by 30 points. The model wasn't ignoring the add-on. It just couldn't build whole-word features on its own, and it used them right away once they were handed over.</p></div></div>
+  <div class="att"><div class="tag no">Attempt 1<b>Fails</b></div><div><h4>Layer-0 retina + LoRA</h4>
+    <p>Project <code>F_retina[ids]</code> into the input embeddings (10.81M params). It scores 47.9% real / 58.1% pseudowords, below plain LoRA (49.5 / 60.7). Ablating the retina costs only −2.4 pts, and illusion fidelity is 10%. At layer 0 the token <em>"berry"</em> has no access to the question. LoRA finds memorising spellings easier than routing a foreign signal through 28 frozen layers.</p></div></div>
+  <div class="att"><div class="tag meh">Attempt 2<b>Partial</b></div><div><h4>Generic mid-layer cross-attention (V1)</h4>
+    <p>Cross-attention taps at layers 14/20/24, where the residual stream already encodes the query. The host now depends on them (−17.1 pts when ablated), but accuracy stalls at 35.0% and illusion fidelity at 16%. Generic attention has to learn subword-to-word aggregation from 4k examples.</p></div></div>
+  <div class="att"><div class="tag yes">Clue</div><div><h4>One feature was already invariant</h4>
+    <p>On cross-token doubles, the only feature we had precomputed across token boundaries, V1 + LoRA jumps to 78.8% and loses 30 pts when ablated. The host does use compiled features, but only once they are already invariant to the BPE split.</p></div></div>
 </div>
 
-<p>So the fix was clear: <strong>do all of the exact, rule-based work ahead of time, and train only the small part that connects it to the model.</strong></p>
+<p>Hence the design principle: <strong>compile everything that is algebraically invariant, and learn only the interface.</strong></p>
 
-<h3>BPE-V2: the Word Retina</h3>
-<p><code>WordRetinaScanner</code> (<code>src/word_retina.py</code>) reads the table entries for each token in turn and adds them up as it goes, like a running total. While it is inside a quoted word, it keeps track of:</p>
+<h3>BPE-V2: a compiled word-level recurrence</h3>
+<p><code>WordRetinaScanner</code> (<code>src/word_retina.py</code>) is a causal gated linear recurrence over <code>F_retina[ids]</code> and <code>E_alpha_chars[ids]</code>. Inside a quoted span it accumulates the following, 623 dims in total:</p>
 <ul>
-  <li>the exact letter counts and length of the <em>whole word</em>;</li>
-  <li>double letters across chunk boundaries (previous chunk's last letter = this chunk's first);</li>
-  <li>the position of every letter, as a 16 × 26 grid;</li>
-  <li>direct answers to the question asked (<code>matched_cnt</code>, <code>matched_nth</code>, <code>is_anagram</code>). That gives 623 numbers in total.</li>
+  <li>the exact word-level histogram and length;</li>
+  <li>cross-token doubles, computed as <code>prev_last · first</code>;</li>
+  <li>a placed character grid <code>[16, 26]</code>;</li>
+  <li>query readouts <code>matched_cnt</code>, <code>matched_nth</code> and <code>is_anagram</code>.</li>
 </ul>
-<pre><code><span class="c"># core of WordRetinaScanner: fixed tensor maths, no string handling</span>
+<p>The state is exactly invariant to tokenization: between <code>str|aw|berry</code> and <code>s|traw|ber|ry</code>, the max absolute difference is 0.0.</p>
+<pre><code><span class="c"># core of WordRetinaScanner: pure tensor algebra, no string ops</span>
 cross_dbl = (st[<span class="s">"prev_last"</span>] * fa_t).sum(-<span class="m">1</span>) * st[<span class="s">"prev_has_alpha"</span>] * (<span class="m">1</span> - ls)
 pos_idx   = st[<span class="s">"sp_len"</span>].unsqueeze(<span class="m">1</span>) + self.slot_offsets
 slot_mask = relu_eq_int(self.pos_grid, pos_idx.unsqueeze(<span class="m">1</span>))
@@ -688,141 +664,141 @@ st[<span class="s">"sp_len"</span>]   += active * al
 st[<span class="s">"sp_dbl"</span>]    = torch.clamp(st[<span class="s">"sp_dbl"</span>] + active * (idbl_t + cross_dbl), <span class="m">0</span>, <span class="m">1</span>)
 st[<span class="s">"sp_chars"</span>] += a1.unsqueeze(-<span class="m">1</span>) * placed</code></pre>
 
-<span class="sn">Each connector is a small gated layer: h′ = h + α·W<sub>out</sub>(SiLU(W<sub>g2</sub>h̃) ⊙ W<sub>mix</sub>(SiLU(W<sub>g1</sub>h̃) ⊙ W<sub>s</sub>S)).</span>
-<p>Three small trained connectors (<code>LatentIntuitionTap</code>) feed these numbers into the frozen model at layers 16, 20 and 24. Together they have <strong>6.47M</strong> trainable parameters, 57% of LoRA's. Each connector starts at exactly zero, so before training the model is bit-identical to the original. During training, an extra loss on random ordinary text keeps the model's normal outputs where they were.</p>
+<span class="sn">Tap: h′ = h + α·W<sub>out</sub>(SiLU(W<sub>g2</sub>h̃) ⊙ W<sub>mix</sub>(SiLU(W<sub>g1</sub>h̃) ⊙ W<sub>s</sub>S)).</span>
+<p>The state enters the frozen host through three SwiGLU-style bilinear residual taps (<code>LatentIntuitionTap</code>) at layers 16/20/24. They total 6.47M parameters, 57% of the LoRA budget. Each <code>o_proj</code> is zero-initialised, so the model is bit-identical at step 0. A light KL anchor on random prose keeps untouched logits in place.</p>
 
 <figure class="fig fw" id="f2">
   <div class="fig-head">
-    <div><div class="fig-title">Figure 2 · Accuracy vs. training examples</div><div class="fig-sub">Unseen real words, Qwen3-0.6B. Hover for values.</div></div>
+    <div><div class="fig-title">Figure 2 · Accuracy vs. training examples</div><div class="fig-sub">Held-out real words, Qwen3-0.6B</div></div>
     <span class="fig-src"><i></i>Recorded · results/*_n{128…4096}_s42.json</span>
   </div>
-  <div><span class="seg" data-k="m"><button class="on" data-v="1">Letter-reading tasks (4)</button><button data-v="2">All 7 tasks</button></span></div>
+  <div><span class="seg" data-k="m"><button class="on" data-v="1">Perceptual (4 tasks)</button><button data-v="2">All 7 tasks</button></span></div>
   <div class="legend" data-legend></div>
   <div class="chart" data-chart></div>
-  <figcaption class="figcap"><b>The Word Retina learns faster.</b> With 2,048 examples and 6.47M parameters, BPE-V2 on a frozen model already beats LoRA trained on 4,096 examples with 11.35M parameters. The grey line is the base model with no add-on.</figcaption>
+  <figcaption class="figcap"><b>Sample efficiency.</b> At n = 2,048 and 6.47M parameters, BPE-V2 on a frozen host already exceeds LoRA at n = 4,096 with 11.35M. Grey: frozen base.</figcaption>
   <details class="data"><summary>Show data table</summary><div data-table></div></details>
 </figure>
 
 <figure class="fig fw" id="f3">
   <div class="fig-head">
-    <div><div class="fig-title">Figure 3 · Accuracy per task at 4,096 examples</div><div class="fig-sub">Unseen real words, plus the two never-trained task types</div></div>
+    <div><div class="fig-title">Figure 3 · Accuracy per task at 4,096 examples</div><div class="fig-sub">Held-out real words · * OOD, never trained</div></div>
     <span class="fig-src"><i></i>Recorded · results/*_n4096_s42.json</span>
   </div>
   <div class="legend" data-legend></div>
   <div class="chart" data-chart></div>
-  <figcaption class="figcap"><b>Reading a word vs. rewriting it.</b> Left of the divider are tasks answered by looking at the word once. There the Word Retina reaches 73–100% on a frozen model. Right of it are tasks that require writing out a changed word letter by letter (delete, replace, reverse). These stay hard without the ALU.</figcaption>
+  <figcaption class="figcap"><b>Perception vs. string surgery.</b> Left of the divider are single-pass perceptual and OOD tasks, where V2 on a frozen host reaches 73–100%. Right are multi-token rewrites, which a single-pass readout doesn't solve.</figcaption>
   <details class="data"><summary>Show data table</summary><div data-table></div></details>
 </figure>
 
 <div class="tbl fw" style="max-width:900px">
 <table>
-<thead><tr><th>Qwen3-0.6B, 4,096 examples</th><th class="r">Trained params</th><th>Base weights</th><th class="r">Letter-reading*</th><th class="r">All 7, real</th><th class="r">All 7, made-up</th><th class="r">Split doubles</th><th class="r">Multi-word count</th><th class="r">Perplexity change<sup>†</sup></th></tr></thead>
+<thead><tr><th>Qwen3-0.6B, n = 4,096</th><th class="r">Params</th><th>Host</th><th class="r">Perceptual*</th><th class="r">All 7 (real)</th><th class="r">All 7 (pseudo)</th><th class="r">Cross-token dbl</th><th class="r">OOD multi-word</th><th class="r">ΔPPL<sup>†</sup></th></tr></thead>
 <tbody>
-<tr><td>Frozen base model</td><td class="r">0</td><td class="dim">unchanged</td><td class="r">32.1</td><td class="r">19.1</td><td class="r">10.7</td><td class="r">50.0</td><td class="r">25.0</td><td class="r">0.00</td></tr>
-<tr><td>Plain LoRA r=18</td><td class="r">11.35M</td><td class="dim">changed</td><td class="r">71.7</td><td class="r">49.5</td><td class="r">60.7</td><td class="r">70.0</td><td class="r">38.3</td><td class="r">+5.08</td></tr>
-<tr><td>Try 1: layer-0 features + LoRA</td><td class="r">10.81M</td><td class="dim">changed</td><td class="r">70.8</td><td class="r">47.9</td><td class="r">58.1</td><td class="r">60.0</td><td class="r">43.3</td><td class="r">+7.72</td></tr>
-<tr><td>Try 2: generic V1</td><td class="r">8.35M</td><td class="dim">unchanged</td><td class="r">55.0</td><td class="r">35.0</td><td class="r">43.6</td><td class="r">46.3</td><td class="r">33.3</td><td class="r">+0.94</td></tr>
-<tr class="me"><td><strong>BPE-V2 Word Retina</strong></td><td class="r">6.47M</td><td>unchanged</td><td class="r"><strong>97.1</strong></td><td class="r">60.0</td><td class="r">63.6</td><td class="r"><strong>83.8</strong></td><td class="r"><strong>73.3</strong></td><td class="r">+0.31</td></tr>
-<tr><td>BPE-V2 + LoRA</td><td class="r">11.51M</td><td class="dim">changed</td><td class="r">96.7</td><td class="r"><strong>63.8</strong></td><td class="r"><strong>70.0</strong></td><td class="r">82.5</td><td class="r">71.7</td><td class="r"><strong>+0.27</strong></td></tr>
+<tr><td>Frozen base</td><td class="r">0</td><td class="dim">frozen</td><td class="r">32.1</td><td class="r">19.1</td><td class="r">10.7</td><td class="r">50.0</td><td class="r">25.0</td><td class="r">0.00</td></tr>
+<tr><td>Plain LoRA r=18</td><td class="r">11.35M</td><td class="dim">adapted</td><td class="r">71.7</td><td class="r">49.5</td><td class="r">60.7</td><td class="r">70.0</td><td class="r">38.3</td><td class="r">+5.08</td></tr>
+<tr><td>Layer-0 retina + LoRA</td><td class="r">10.81M</td><td class="dim">adapted</td><td class="r">70.8</td><td class="r">47.9</td><td class="r">58.1</td><td class="r">60.0</td><td class="r">43.3</td><td class="r">+7.72</td></tr>
+<tr><td>Generic V1</td><td class="r">8.35M</td><td class="dim">frozen</td><td class="r">55.0</td><td class="r">35.0</td><td class="r">43.6</td><td class="r">46.3</td><td class="r">33.3</td><td class="r">+0.94</td></tr>
+<tr class="me"><td><strong>BPE-V2 Word Retina</strong></td><td class="r">6.47M</td><td>frozen</td><td class="r"><strong>97.1</strong></td><td class="r">60.0</td><td class="r">63.6</td><td class="r"><strong>83.8</strong></td><td class="r"><strong>73.3</strong></td><td class="r">+0.31</td></tr>
+<tr><td>BPE-V2 + LoRA</td><td class="r">11.51M</td><td class="dim">adapted</td><td class="r">96.7</td><td class="r"><strong>63.8</strong></td><td class="r"><strong>70.0</strong></td><td class="r">82.5</td><td class="r">71.7</td><td class="r"><strong>+0.27</strong></td></tr>
 </tbody>
 </table>
 </div>
-<p class="tnote">* Count, length, nth letter and double letter on unseen real words. Word Retina per task: 98.3 / 91.7 / 100.0 / 98.3. † Change in perplexity on held-out ordinary text; lower is better. The LoRA and Try 1 rows were measured on a different text sample (base perplexity 25.9) from the V1/V2 rows (base 30.2–30.4).</p>
-<details class="more"><summary>Compressed words and anagram results</summary>
+<p class="tnote">* Perceptual = count, length, nth, double on held-out real words. Frozen V2 per task: 98.3 / 91.7 / 100.0 / 98.3. † Held-out prose perplexity shift. The LoRA and layer-0 arms were evaluated on a different prose sample (base PPL 25.9) from the V1/V2 arms (30.2–30.4).</p>
+<details class="more"><summary>Compound pseudowords and anagram (OOD)</summary>
 <div class="tbl" style="margin-top:12px"><table>
-<thead><tr><th></th><th class="r">Compressed words (letter-reading / all 7)</th><th class="r">Anagram (never trained)</th></tr></thead>
+<thead><tr><th></th><th class="r">Compound (perceptual / all 7)</th><th class="r">OOD anagram</th></tr></thead>
 <tbody>
-<tr><td>Frozen base model</td><td class="r">—</td><td class="r">38.3</td></tr>
+<tr><td>Frozen base</td><td class="r">—</td><td class="r">38.3</td></tr>
 <tr><td>Plain LoRA</td><td class="r">64.4 / 44.3</td><td class="r">58.3</td></tr>
-<tr><td>Try 1: layer-0 + LoRA</td><td class="r">—</td><td class="r">63.3</td></tr>
-<tr><td>Try 2: generic V1</td><td class="r">46.9 / 31.1</td><td class="r">40.0</td></tr>
+<tr><td>Layer-0 retina + LoRA</td><td class="r">—</td><td class="r">63.3</td></tr>
+<tr><td>Generic V1</td><td class="r">46.9 / 31.1</td><td class="r">40.0</td></tr>
 <tr class="me"><td>BPE-V2 Word Retina</td><td class="r">96.9 / 58.6</td><td class="r">61.7</td></tr>
 <tr><td>BPE-V2 + LoRA</td><td class="r">93.8 / 62.1</td><td class="r">38.3</td></tr>
 </tbody></table></div>
 </details>
 
 <div class="callout">
-  <div class="h">Two add-ons, two kinds of task</div>
-  <p><strong>Reading a word</strong> (count, length, n-th letter, split doubles, counting across several words) works through the Word Retina at 73–100%, on a frozen model. <strong>Rewriting a word</strong> (delete, replace, reverse) is still too much for a one-step readout. That is exactly where the ALU is at 100%.</p>
+  <div class="h">Perception vs. string surgery</div>
+  <p>The two modules divide the task space cleanly. <strong>Single-pass perception</strong> (count, length, nth, cross-token doubles, OOD multi-word count) reaches 73–100% through the retina on a frozen host. <strong>Multi-token rewrites</strong> (delete, replace, reverse) remain out of reach for a single-pass readout, and that is exactly where the compiled ALU is exact.</p>
 </div>
 </section>
 
 <!-- ============ 05 ============ -->
 <section class="sec" id="causal">
 <span class="secnum">§ 05</span>
-<h2>Does the model really see through the retina?</h2>
-<p class="lede">High scores don't prove much. Perhaps the 6.47M new parameters found a shortcut and ignore the letter information entirely. We tested this three ways.</p>
+<h2>Causal tests</h2>
+<p>Accuracy alone doesn't rule out a shortcut: the taps could exploit the host's own hidden states and ignore the compiled features. We ran three interventions.</p>
 
-<h3>Test 1 · The blindfold</h3>
-<p>At test time we switch the retina's signal off (multiply it by 0). The base model was never changed, so if the gains come from the retina, they should vanish.</p>
+<h3>Ablation</h3>
+<p>We set the retina's scale to 0 at test time. Because the host is frozen, this recovers roughly base-model behaviour: real words fall 60.0 → 17.4% (base: 19.1%).</p>
 
 <figure class="fig fw" id="f4">
   <div class="fig-head">
-    <div><div class="fig-title">Figure 4 · Word Retina with the signal on vs. switched off</div><div class="fig-sub">BPE-V2 on a frozen Qwen3-0.6B, all 7 tasks (split doubles: one task)</div></div>
+    <div><div class="fig-title">Figure 4 · Retina ablation</div><div class="fig-sub">BPE-V2, frozen Qwen3-0.6B · all 7 tasks (cross-token doubles: 1 task)</div></div>
     <span class="fig-src"><i></i>Recorded · v2_frozen_n4096.json</span>
   </div>
   <div class="legend" data-legend></div>
   <div class="chart" data-chart></div>
-  <figcaption class="figcap"><b>The gains vanish without the retina.</b> Real words fall from 60.0% to 17.4% (−42.6), made-up words from 63.6% to 7.4% (−56.2), compressed words from 58.6% to 18.6% (−40.0), and split doubles from 83.8% to 51.2% (−32.5). That is back to roughly the untouched base model (19.1% on real words).</figcaption>
+  <figcaption class="figcap"><b>Ablation returns V2 to roughly base-model accuracy</b> (base: 19.1% on real words). Real −42.6, pseudowords −56.2, compound −40.0, cross-token doubles −32.5.</figcaption>
   <details class="data"><summary>Show data table</summary><div data-table></div></details>
 </figure>
 
-<h3>Test 2 · The optical illusion</h3>
-<p>This test is stronger. We keep the question text <em>exactly the same</em>, but secretly change one number the retina reports: the count of <code>r</code> for the chunk <em>"berry"</em>, by δ. If the model really reads its retina, it should look at the unchanged word <em>strawberry</em> and report a different count.</p>
+<h3>Optical illusions</h3>
+<p>We hold the input token IDs fixed and add an integer δ only to the <code>'r'</code> feature of <code>F_retina</code> on <em>"berry"</em>. If the host reads the retina, it should report a count that contradicts the unchanged text.</p>
 
 <div class="lab wide illus" id="ill" style="max-width:980px">
   <div class="lab-head">
     <div class="lab-title">Optical illusion lab <span class="badge rec"><i></i>Recorded predictions · not live inference</span></div>
     <div class="ctrls" id="o-arch">
-      <button class="pbtn on" data-a="v2_frozen">Word Retina</button>
-      <button class="pbtn" data-a="v2_lora">Retina + LoRA</button>
-      <button class="pbtn" data-a="v1_frozen">Try 2: V1</button>
-      <button class="pbtn" data-a="l0_lora">Try 1: layer-0</button>
+      <button class="pbtn on" data-a="v2_frozen">V2 (frozen)</button>
+      <button class="pbtn" data-a="v2_lora">V2 + LoRA</button>
+      <button class="pbtn" data-a="v1_frozen">Generic V1</button>
+      <button class="pbtn" data-a="l0_lora">Layer-0 + LoRA</button>
     </div>
   </div>
   <div class="ill-grid">
     <div class="pane">
-      <div class="plabel">The text the model reads · never changes</div>
+      <div class="plabel">Input tokens · fixed</div>
       <div class="prompt" style="margin-top:8px">How many times does the letter 'r' appear in '<span class="t">str</span><span class="t">aw</span><span class="t pert">berry</span>'?<br>Answer:</div>
-      <div class="plabel" style="margin-top:20px">What the retina reports · r count per chunk</div>
+      <div class="plabel" style="margin-top:20px">F_retina['r'] per token</div>
       <div class="retina-row" id="o-ret"></div>
-      <div class="dsl"><span class="plabel" style="white-space:nowrap">Edit δ</span><input type="range" id="o-d" min="-2" max="3" step="1" value="-1" aria-label="Change to the retina's r count"><b id="o-dv" style="font:700 16px var(--mono);color:var(--amber);min-width:30px;text-align:right">−1</b></div>
+      <div class="dsl"><span class="plabel" style="white-space:nowrap">δ</span><input type="range" id="o-d" min="-2" max="3" step="1" value="-1" aria-label="Change to the retina's r count"><b id="o-dv" style="font:700 16px var(--mono);color:var(--amber);min-width:30px;text-align:right">−1</b></div>
     </div>
     <div class="pane">
-      <div class="plabel">Model's answer</div>
+      <div class="plabel">Next-token prediction</div>
       <div class="pred y" id="o-p">2</div>
       <div id="o-s" style="font-size:13.5px;color:var(--p-dim)"></div>
-      <div class="plabel" style="margin-top:18px">All six edits · click one</div>
+      <div class="plabel" style="margin-top:18px">δ sweep</div>
       <div class="sweep" id="o-sweep"></div>
-      <div style="margin-top:18px;display:flex;justify-content:space-between;font-size:12.5px;color:var(--p-dim)"><span>25-word test (50 edits) · answers that follow</span><b id="o-f" style="color:var(--p-ink)">88%</b></div>
+      <div style="margin-top:18px;display:flex;justify-content:space-between;font-size:12.5px;color:var(--p-dim)"><span>Systematic fidelity · 25 words, n = 50</span><b id="o-f" style="color:var(--p-ink)">88%</b></div>
       <div class="meter"><i id="o-m" style="width:88%"></i></div>
     </div>
   </div>
   <div class="pfoot" id="o-n"></div>
 </div>
 
-<p>There is an honest limit here. On <em>strawberry</em>, the Word Retina follows δ = −2, −1 and 0 exactly (answering <code>1</code>, <code>2</code>, <code>3</code>), then gets stuck. Single English words almost never contain more than three of one letter, so the trained connector never learned to output 4, 5 or 6. In the systematic test (25 unseen words, one random letter each, the count raised by +1 and +2 on the word's last chunk), the answer follows the edit <strong>88%</strong> of the time (44/50) on the frozen model, and <strong>94%</strong> (47/50) with LoRA.</p>
+<p>On <em>strawberry</em>, V2 follows δ = −2, −1, 0 exactly and then saturates at 3. Single-word training data rarely contains more than three copies of one letter, so the learned readout is uncalibrated above that. The systematic suite uses 25 held-out words, a random letter each, and δ ∈ {+1, +2} on the word's last token. There, fidelity is <strong>88%</strong> (44/50) frozen and <strong>94%</strong> (47/50) with LoRA.</p>
 
 <figure class="fig fw" id="f5">
   <div class="fig-head">
-    <div><div class="fig-title">Figure 5 · How often the answer follows an edited retina</div><div class="fig-sub">25 unseen words × 2 edits each (n = 50); text never changes</div></div>
+    <div><div class="fig-title">Figure 5 · Optical-illusion fidelity</div><div class="fig-sub">25 held-out words × δ ∈ {+1, +2}, identical input tokens (n = 50)</div></div>
     <span class="fig-src"><i></i>Recorded · optical_illusion in results/*.json</span>
   </div>
   <div class="chart" data-chart></div>
-  <figcaption class="figcap"><b>Only the Word Retina is really being read.</b> The failed designs almost always ignore the edit (8–16%), and the layer-0 version follows it 10% of the time. BPE-V2 follows it 88% (frozen) and 94% (with LoRA).</figcaption>
+  <figcaption class="figcap"><b>Only V2 is read causally.</b> The layer-0 and V1 variants follow 8–16% of perturbations; V2 follows 88% (frozen) and 94% (+ LoRA).</figcaption>
   <details class="data"><summary>Show data table</summary><div data-table></div></details>
 </figure>
 
-<h3>Test 3 · Compressed and re-chunked words</h3>
-<p><strong>Compressed words.</strong> We glue random 4–7 letter chunks into 9–13 letter strings that the tokenizer packs into 3 tokens or fewer. This is the worst case for a model relying on memorised spellings. The Word Retina scores <strong>96.9%</strong> on letter-reading tasks (count 100, double 100, length 95, nth 92.5), against 64.4% for LoRA.</p>
-<p><strong>Re-chunked words.</strong> We cut unseen words into a different, still valid set of tokens with the exact same letters. The Word Retina holds up (70.0 → 73.1 frozen, 73.1 → 75.0 with LoRA). We didn't run the ALU on this saved test, but its circuit reads letters, not chunk boundaries, and scored 100% directly on every test set.</p>
+<h3>Compression and re-tokenization</h3>
+<p><strong>Compound pseudowords</strong> are the worst case for memorised spellings: 9–13 characters in ≤3 tokens. Frozen V2 reaches 96.9% perceptual (count 100, double 100, length 95, nth 92.5), against 64.4% for LoRA.</p>
+<p><strong>Re-tokenization</strong> splits held-out words into alternative valid tokenizations of the same bytes. V2 is unaffected (70.0 → 73.1 frozen, 73.1 → 75.0 with LoRA). We did not run the ALU on this split. Its circuit indexes characters rather than tokens, and it is 100% on every suite in the direct check.</p>
 
 <figure class="fig fw" id="f6">
   <div class="fig-head">
     <div><div class="fig-title">Figure 6 · Stress tests</div><div class="fig-sub" id="f6-sub"></div></div>
     <span class="fig-src"><i></i>Recorded · results/*.json</span>
   </div>
-  <div><span class="seg" data-k="t"><button class="on" data-v="compound">Compressed words</button><button data-v="retok">Re-chunked words</button></span></div>
+  <div><span class="seg" data-k="t"><button class="on" data-v="compound">Compound pseudowords</button><button data-v="retok">Re-tokenization</button></span></div>
   <div class="legend" data-legend></div>
   <div class="chart" data-chart></div>
   <figcaption class="figcap" id="f6-cap"></figcaption>
@@ -835,14 +811,14 @@ st[<span class="s">"sp_chars"</span>] += a1.unsqueeze(-<span class="m">1</span>)
 <span class="secnum">§ 06</span>
 <h2>Limitations</h2>
 <ol>
-  <li><strong>Rewriting words still needs the ALU.</strong> The Word Retina is near-perfect at reading a word in one go, but rewriting letter by letter stays weak on a frozen model: delete 23%, replace 7%, reverse 2%. Combining the retina with the ALU is the obvious next step.</li>
-  <li><strong>The answer gets stuck at about 3.</strong> The trained connector stops increasing above the letter counts common in single English words. A few synthetic high-count strings, or a direct numeric channel, should remove that ceiling.</li>
-  <li><strong>The target word must be in quotes.</strong> The scanner uses quote marks to know which word is being asked about. Handling unquoted text would need learned word-boundary detection.</li>
-  <li><strong>Scale.</strong> The ALU is verified on three models from two families. The Word Retina was trained only on Qwen3-0.6B. Larger models, and training together with RL as in WSM, are untested.</li>
+  <li><strong>String surgery.</strong> V2 gives near-perfect single-pass perception, but autoregressive edits stay weak on a frozen host: delete 23%, replace 7%, reverse 2%. Composing the retina with the ALU is the obvious next step.</li>
+  <li><strong>Readout saturation.</strong> The learned tap saturates above the counts typical of single English words (≈3). High-count synthetic strings, or a continuous scalar channel, should lift the ceiling.</li>
+  <li><strong>Span latching.</strong> The scanner relies on quote-token gates to find the target span. Unquoted prose would need learned boundary gates or a rolling word register.</li>
+  <li><strong>Scale.</strong> The ALU is verified on three models in two families. V2 is trained only on Qwen3-0.6B. Larger hosts and RL co-training, as in WSM, are untested.</li>
 </ol>
 <div class="callout">
   <div class="h">Takeaway</div>
-  <p>Don't make a model memorise information that already sits in its tokenizer file. Turn it into tables once, give it to the model directly, and let training spend its effort on everything else.</p>
+  <p>Don't ask gradient descent to memorise structure that already lives in the tokenizer. Compile it into weight space once, and spend the trainable parameters on the interface.</p>
 </div>
 </section>
 
@@ -850,13 +826,13 @@ st[<span class="s">"sp_chars"</span>] += a1.unsqueeze(-<span class="m">1</span>)
 <section class="sec" id="code">
 <span class="secnum">§ 07</span>
 <h2>Code &amp; citation</h2>
-<p>All experiments, saved results and plotting scripts are at <a href="https://github.com/samarth777/bpe-xray">github.com/samarth777/bpe-xray</a>. Every chart on this page is drawn from <code>results/*.json</code>. The original static figures are in <code>figures/</code>.</p>
+<p>Code, saved results and figure scripts: <a href="https://github.com/samarth777/bpe-xray">github.com/samarth777/bpe-xray</a>. Every chart on this page is rendered from <code>results/*.json</code>; static versions are in <code>figures/</code>.</p>
 <ul class="files">
-  <li><code>src/char_tables.py</code><span>Builds the <code>CharWeightBank</code> tables from any Hugging Face tokenizer</span></li>
-  <li><code>src/xray_alu.py</code><span>The exact X-Ray ALU (+ <code>run_alu_eval.py</code>)</span></li>
-  <li><code>src/word_retina.py</code><span>BPE-V2 scanner and connectors (+ <code>train_v2.py</code>, blindfold / illusion tests)</span></li>
-  <li><code>src/xray_retina.py</code>, <code>visual_cortex.py</code><span>Try 1 (layer-0) and Try 2 (V1)</span></li>
-  <li><code>src/make_figures.py</code><span>Static PNG figures from <code>results/*.json</code></span></li>
+  <li><code>src/char_tables.py</code><span><code>CharWeightBank</code> compiler for any HF tokenizer</span></li>
+  <li><code>src/xray_alu.py</code><span>Exact X-Ray ALU (+ <code>run_alu_eval.py</code>)</span></li>
+  <li><code>src/word_retina.py</code><span>BPE-V2 scanner and taps (+ <code>train_v2.py</code>, causal suites)</span></li>
+  <li><code>src/xray_retina.py</code>, <code>visual_cortex.py</code><span>Layer-0 and V1 ablations</span></li>
+  <li><code>src/make_figures.py</code><span>Static figures from <code>results/*.json</code></span></li>
 </ul>
 <div class="bib" id="cite">
 <button id="bib-copy">Copy</button>
@@ -870,6 +846,7 @@ st[<span class="s">"sp_chars"</span>] += a1.unsqueeze(-<span class="m">1</span>)
 </div>
 </section>
 </article>
+
 
 <footer>
   <span>© 2026 <a href="https://samarth777.github.io/">Samarth P</a></span>
@@ -919,8 +896,8 @@ function hero(){
     ? `<span>tokens <b>${toks.length}</b></span><span>letters <b>${w.length}</b></span><span class="hl">count('${esc(q)}') <b>${n}</b></span>`
     : `<span>what the model receives <b>[${ids?ids.join(', '):'…'}]</b></span><span class="hl">count('${esc(q)}') <b>?</b></span>`;
   $('#h-foot').innerHTML = real
-    ? (on?'X-ray on: the letters each token stands for, read from <code>tokenizer.json</code>. The model itself only ever receives the ID numbers.':'X-ray off: this is all the model gets, one ID number per chunk. Turn the X-ray on to see the letters hidden inside.')
-    : 'This word isn\'t in our precomputed Qwen3 list, so the chunks shown are made up for illustration. Try one of the suggestions.';
+    ? (on?'X-ray on: the letters each token stands for, read from <code>tokenizer.json</code>. The model itself only ever receives the ID numbers.':'X-ray off: this is all the model gets, one ID per token. Turn the X-ray on to see the letters hidden inside.')
+    : 'This word isn\'t in our precomputed Qwen3 list, so the split shown is illustrative only. Try one of the suggestions.';
 }
 const hT=$('#h-toggle');
 function setHero(on){$('#h-stage').classList.toggle('on',on);hT.classList.toggle('on',on);hT.textContent=on?'X-ray on':'X-ray off';hT.setAttribute('aria-pressed',on);hero();}
@@ -937,9 +914,9 @@ setTimeout(()=>setHero(true), matchMedia('(prefers-reduced-motion: reduce)').mat
   const ret=$('#arch .g-ret');
   const xs=[16,20,24].map(i=>x0+i*(w+gap)+w/2);
   const p=document.createElementNS(NS,'path');p.setAttribute('class','flow');p.setAttribute('d',`M415 228V246H${xs[2]}M${xs[0]} 246V274M${xs[1]} 246V274M${xs[2]} 246V274`);ret.replaceChild(p,$('#tap16'));
-  const caps={both:'<b>Both add-ons</b> read from the same tables, built once from <code>tokenizer.json</code>. The transformer in the middle is never trained or changed.',
-    alu:'<b>X-Ray ALU.</b> When a <code>[XRAY …]=</code> tag is open, it calculates the exact answer and writes it in just before the output. Otherwise it does nothing, so output on normal text is bit-identical.',
-    ret:'<b>Word Retina.</b> It joins the chunks of a quoted word into whole-word letter features, and small trained connectors add them into layers 16, 20 and 24. No tag is needed.'};
+  const caps={both:'<b>Both modules</b> read the same frozen bank, compiled once from <code>tokenizer.json</code>. No host weight is modified.',
+    alu:'<b>X-Ray ALU.</b> While an <code>[XRAY …]=</code> span is open, it computes the exact answer and writes a solved direction at the final norm. Otherwise it is the identity, so prose logits are bit-identical.',
+    ret:'<b>Word Retina.</b> A causal recurrence fuses the sub-tokens of the quoted span into BPE-invariant word features. Zero-initialised taps write them into the residual stream at layers 16, 20 and 24. No tool syntax.'};
   const box=$('#arch-svg');
   $$('#arch-btns button').forEach(b=>b.onclick=()=>{$$('#arch-btns button').forEach(x=>x.classList.remove('on'));b.classList.add('on');box.classList.remove('only-alu','only-ret');if(b.dataset.v!=='both')box.classList.add('only-'+b.dataset.v);$('#arch-cap').innerHTML=caps[b.dataset.v];});
   $('#arch-cap').innerHTML=caps.both;
@@ -967,7 +944,7 @@ function insp(roll){
 $('#i-roll').onclick=()=>insp(true); insp();
 
 /* ---------- ALU console ---------- */
-const TABS=[['strawberry',null],['count','count_real'],['length','length_real'],['nth letter','nth_real'],['spell','spell_real'],['reverse','reverse_real'],['rot13','rot13_real'],['made-up word','reverse_nonce'],['multi-word','count_multiword']];
+const TABS=[['strawberry',null],['count','count_real'],['length','length_real'],['nth letter','nth_real'],['spell','spell_real'],['reverse','reverse_real'],['rot13','rot13_real'],['pseudoword','reverse_nonce'],['multi-word','count_multiword']];
 let tIdx={}, timer=null;
 $('#a-tabs').innerHTML=TABS.map((t,i)=>`<button class="pbtn ${i?'':'on'}" data-i="${i}">${t[0]}</button>`).join('');
 $$('#a-tabs button').forEach(b=>b.onclick=()=>{$$('#a-tabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');runTab(+b.dataset.i);});
@@ -979,26 +956,26 @@ function runTab(i){
   const list=DEMOS[key]||[]; if(!list.length) return;
   tIdx[key]=((tIdx[key]??-1)+1)%list.length;
   const ex=list[tIdx[key]], term=$('#a-term'); let k=0;
-  const label=key.replace('_real',' · real word').replace('_nonce',' · made-up word').replace('count_multiword','count · several words');
+  const label=key.replace('_real',' · real word').replace('_nonce',' · pseudoword').replace('count_multiword','count · multi-word');
   (function step(){
-    term.innerHTML=`<div class="ln"><span class="p">${esc(ex.p)}</span><span class="w">${esc(ex.o.slice(0,k))}</span><span class="cur"></span></div><div class="meta" style="margin-top:12px">${esc(label)} · ALU wrote ${ex.o.length} character${ex.o.length>1?'s':''}, then went silent. Click the tab again for another word.</div>`;
+    term.innerHTML=`<div class="ln"><span class="p">${esc(ex.p)}</span><span class="w">${esc(ex.o.slice(0,k))}</span><span class="cur"></span></div><div class="meta" style="margin-top:12px">${esc(label)} · ALU wrote ${ex.o.length} character${ex.o.length>1?'s':''}, then went silent. Click again for another word.</div>`;
     if(k++<ex.o.length) timer=setTimeout(step,ex.o.length>6?55:220);
   })();
 }
 
 /* ---------- illusion ---------- */
 const ILL={
-  v2_frozen:{fid:88,p:{'-2':'1','-1':'2','0':'3','1':'3','2':'3','3':'3'},n:d=>d<=0?`The retina now says ${3+d} r's, and the frozen model answers '${3+d}' even though the text still says strawberry.`:`The edited count (${3+d}) is above anything single words gave during training, so the answer stays at '3'.`},
-  v2_lora:{fid:94,p:{'-2':'1','-1':'2','0':'3','1':'2','2':'2','3':'2'},n:d=>d<=0?`Follows the edited retina ('${3+d}') on unchanged text.`:`The edited count (${3+d}) is above anything single words gave during training, so the answer falls back.`},
-  v1_frozen:{fid:16,p:{'-2':'3','-1':'3','0':'3','1':'3','2':'3','3':'3'},n:()=>`Try 2 (generic V1) ignores the edit and always answers '3'.`},
-  l0_lora:{fid:10,p:{'-2':'3','-1':'3','0':'3','1':'3','2':'3','3':'3'},n:()=>`Try 1: LoRA skipped the layer-0 features and memorised “strawberry → 3” in the model's own weights.`}
+  v2_frozen:{fid:88,p:{'-2':'1','-1':'2','0':'3','1':'3','2':'3','3':'3'},n:d=>d<=0?`Retina reports ${3+d}; the frozen host predicts '${3+d}' on unchanged tokens.`:`Target ${3+d} exceeds the counts seen in single-word training; the readout saturates at '3'.`},
+  v2_lora:{fid:94,p:{'-2':'1','-1':'2','0':'3','1':'2','2':'2','3':'2'},n:d=>d<=0?`Follows the edited retina ('${3+d}') on unchanged tokens.`:`Target ${3+d} exceeds the counts seen in single-word training; the readout falls back.`},
+  v1_frozen:{fid:16,p:{'-2':'3','-1':'3','0':'3','1':'3','2':'3','3':'3'},n:()=>`Generic V1 ignores the perturbation and always predicts '3'.`},
+  l0_lora:{fid:10,p:{'-2':'3','-1':'3','0':'3','1':'3','2':'3','3':'3'},n:()=>`LoRA bypasses the layer-0 retina and memorises “strawberry → 3” in host weights.`}
 };
 let arch='v2_frozen';
 function ill(){
   const d=+$('#o-d').value, c=ILL[arch], p=c.p[d], tgt=String(3+d), ok=p===tgt;
   $('#o-dv').textContent=(d>0?'+':d<0?'−':'')+Math.abs(d);
   $('#o-p').textContent=p; $('#o-p').className='pred '+(ok?'y':'n');
-  $('#o-s').innerHTML=`edited retina says <b style="color:var(--p-ink)">${tgt}</b> · true count 3 · ${ok?'<span style="color:var(--phos)">answer follows the retina</span>':'<span style="color:#f87171">answer ignores it</span>'}`;
+  $('#o-s').innerHTML=`illusion target <b style="color:var(--p-ink)">${tgt}</b> · true count 3 · ${ok?'<span style="color:var(--phos)">followed</span>':'<span style="color:#f87171">not followed</span>'}`;
   $('#o-f').textContent=c.fid+'%'; $('#o-m').style.width=c.fid+'%'; $('#o-n').textContent=c.n(d);
   /* per-chunk r counts: str=1, aw=0, berry=2; negative δ removes from the last chunk first (as in the experiment) */
   let r=[1,0,2], rem=-d; if(d>=0) r[2]+=d; else for(let i=2;i>=0&&rem>0;i--){const t=Math.min(r[i],rem);r[i]-=t;rem-=t;}
@@ -1069,7 +1046,7 @@ function hbars(el,cfg){
     const p=S('path',{d:`M${x(0)},${yc-bh/2}H${x(0)+w-rr}Q${x(0)+w},${yc-bh/2} ${x(0)+w},${yc-bh/2+rr}V${yc+bh/2-rr}Q${x(0)+w},${yc+bh/2} ${x(0)+w-rr},${yc+bh/2}H${x(0)}Z`,class:'mark',style:`fill:var(${r.c})`},marks);
     const vl=S('text',{x:x(0)+w+6,y:yc+4,class:'vl'},svg);vl.textContent=Math.round(v)+'%';
     const hit=S('rect',{x:0,y:yc-rowH/2,width:W,height:rowH,class:'hit',tabindex:0,'aria-label':`${r.name}: ${v}%`},svg);
-    const on=e=>{marks.classList.add('dim');p.classList.add('lift');showTip(e,r.name,[[r.note||'answers that follow',pct(v),col(r.c)]]);};
+    const on=e=>{marks.classList.add('dim');p.classList.add('lift');showTip(e,r.name,[[r.note||'fidelity',pct(v),col(r.c)]]);};
     const off=()=>{marks.classList.remove('dim');p.classList.remove('lift');hideTip();};
     hit.addEventListener('pointermove',on);hit.addEventListener('pointerleave',off);hit.addEventListener('focus',on);hit.addEventListener('blur',off);
   });
@@ -1084,7 +1061,7 @@ function lines(el,cfg){
   [0,25,50,75,100].forEach(v=>{S('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),class:v?'grid':'base'},svg);const t=S('text',{x:m.l-8,y:y(v)+4,'text-anchor':'end',class:'tick'},svg);t.textContent=v+(v===100?'%':'');});
   cfg.x.forEach((v,i)=>{const t=S('text',{x:X(i),y:H-m.b+18,'text-anchor':'middle',class:'xl tick'},svg);t.textContent=v.toLocaleString();});
   const xt=S('text',{x:m.l+pw/2,y:H-2,'text-anchor':'middle',class:'tick','font-size':'11'},svg);xt.textContent='training examples (log scale)';
-  if(cfg.ref!=null){S('line',{x1:m.l,x2:W-m.r,y1:y(cfg.ref),y2:y(cfg.ref),style:'stroke:var(--sbase);stroke-width:2'},svg);const t=S('text',{x:m.l+6,y:y(cfg.ref)-6,class:'tick','font-size':'11'},svg);t.textContent='base model, no add-on · '+pct(cfg.ref);}
+  if(cfg.ref!=null){S('line',{x1:m.l,x2:W-m.r,y1:y(cfg.ref),y2:y(cfg.ref),style:'stroke:var(--sbase);stroke-width:2'},svg);const t=S('text',{x:m.l+6,y:y(cfg.ref)-6,class:'tick','font-size':'11'},svg);t.textContent='frozen base · '+pct(cfg.ref);}
   const xh=S('line',{y1:m.t,y2:H-m.b,class:'xhair',style:'opacity:0'},svg);
   cfg.series.forEach(s=>{
     S('path',{d:s.values.map((v,i)=>(i?'L':'M')+X(i)+','+y(v)).join(''),fill:'none',style:`stroke:var(${s.c});stroke-width:2;stroke-linejoin:round;stroke-linecap:round`},svg);
@@ -1093,7 +1070,7 @@ function lines(el,cfg){
   });
   const ov=S('rect',{x:m.l,y:m.t,width:pw,height:ph,class:'hit',tabindex:0,'aria-label':'Chart values; use arrow keys'},svg);
   let ki=cfg.x.length-1;
-  const at=(i,e)=>{xh.setAttribute('x1',X(i));xh.setAttribute('x2',X(i));xh.style.opacity=1;showTip(e,cfg.x[i].toLocaleString()+' training examples',[...cfg.series].sort((a,b)=>b.values[i]-a.values[i]).map(s=>[s.name,pct(s.values[i]),col(s.c)]).concat(cfg.ref!=null?[['base model',pct(cfg.ref),col('--sbase')]]:[]));};
+  const at=(i,e)=>{xh.setAttribute('x1',X(i));xh.setAttribute('x2',X(i));xh.style.opacity=1;showTip(e,cfg.x[i].toLocaleString()+' training examples',[...cfg.series].sort((a,b)=>b.values[i]-a.values[i]).map(s=>[s.name,pct(s.values[i]),col(s.c)]).concat(cfg.ref!=null?[['frozen base',pct(cfg.ref),col('--sbase')]]:[]));};
   ov.addEventListener('pointermove',e=>{const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)*(W/r.width);let b=0,d=1e9;cfg.x.forEach((_,i)=>{const dd=Math.abs(X(i)-px);if(dd<d){d=dd;b=i;}});ki=b;at(b,e);});
   ov.addEventListener('pointerleave',()=>{xh.style.opacity=0;hideTip();});
   ov.addEventListener('focus',e=>at(ki,e));ov.addEventListener('blur',()=>{xh.style.opacity=0;hideTip();});
@@ -1101,7 +1078,7 @@ function lines(el,cfg){
 }
 
 /* series identities (colour follows the entity) */
-const ENT={v2_frozen:{name:'BPE-V2 Word Retina (frozen)',short:'Word Retina',c:'--s1'},v2_lora:{name:'BPE-V2 + LoRA',short:'Retina + LoRA',c:'--s2'},plain_lora:{name:'Plain LoRA',short:'LoRA',c:'--s3'},v1_frozen:{name:'Try 2: generic V1 (frozen)',short:'V1',c:'--s4'},v1_lora:{name:'Try 2: V1 + LoRA',short:'V1 + LoRA',c:'--s4'},retina_lora:{name:'Try 1: layer-0 + LoRA',short:'Layer-0',c:'--s5'},l0_lora:{name:'Try 1: layer-0 + LoRA',short:'Layer-0',c:'--s5'}};
+const ENT={v2_frozen:{name:'BPE-V2 Word Retina (frozen)',short:'Word Retina',c:'--s1'},v2_lora:{name:'BPE-V2 + LoRA',short:'Retina + LoRA',c:'--s2'},plain_lora:{name:'Plain LoRA',short:'LoRA',c:'--s3'},v1_frozen:{name:'Generic V1 (frozen)',short:'V1',c:'--s4'},v1_lora:{name:'Generic V1 + LoRA',short:'V1 + LoRA',c:'--s4'},retina_lora:{name:'Layer-0 retina + LoRA',short:'Layer-0',c:'--s5'},l0_lora:{name:'Layer-0 retina + LoRA',short:'Layer-0',c:'--s5'}};
 
 const FIGS={};
 function segState(fig){const st={};$$('.seg',fig).forEach(s=>{st[s.dataset.k]=$('button.on',s).dataset.v;});return st;}
@@ -1110,10 +1087,10 @@ function wireSeg(fig,draw){$$('.seg',fig).forEach(s=>$$('button',s).forEach(b=>b
 /* Fig 1: ALU */
 FIGS.f1=()=>{const f=$('#f1'),st=segState(f),A=RES.alu[st.model];
   const tasks=[['count','count'],['length','length'],['nth','nth letter'],['spell','spell'],['reverse','reverse'],['rot13','rot13']];
-  const groups=tasks.map(t=>t[1]).concat(st.split==='real'?['several\nwords']:[]);
+  const groups=tasks.map(t=>t[1]).concat(st.split==='real'?['multi-\nword']:[]);
   const get=(k,j)=>A[k][j];
   const keys=tasks.map(t=>t[0]+'_'+st.split).concat(st.split==='real'?['count_multiword']:[]);
-  const series=[{name:'Base model, 2 examples in prompt',c:'--sbase',values:keys.map(k=>get(k,0))},{name:'+ X-Ray ALU',c:'--s1',values:keys.map(k=>get(k,1))}];
+  const series=[{name:'Base model (2-shot)',c:'--sbase',values:keys.map(k=>get(k,0))},{name:'+ X-Ray ALU',c:'--s1',values:keys.map(k=>get(k,1))}];
   legend($('[data-legend]',f),series.map(s=>({name:s.name,c:s.c})));
   columns($('[data-chart]',f),{groups:groups.map(g=>g),series,label:(si)=>true,minW:520,aria:'Accuracy with and without the X-Ray ALU per task'});
   dataTable($('[data-table]',f),['Task','Base model','+ X-Ray ALU','Circuit alone'],keys.map((k,i)=>[groups[i].replace('\n',' '),A[k][0],A[k][1],A[k][2]]));
@@ -1129,33 +1106,33 @@ FIGS.f2=()=>{const f=$('#f2'),j=+segState(f).m,E=RES.eff;
 };
 /* Fig 3: per task */
 FIGS.f3=()=>{const f=$('#f3'),T=RES.perTask;
-  const names=['count','length','nth\nletter','double\nletter','split\ndoubles','several\nwords*','anagram*','delete','replace','reverse'];
+  const names=['count','length','nth','double','cross-token\ndoubles','multi-\nword*','anagram*','delete','replace','reverse'];
   const series=['v2_frozen','v2_lora','plain_lora'].map(k=>({name:ENT[k].name,c:ENT[k].c,values:T[k]}));
   legend($('[data-legend]',f),series.map(s=>({name:s.name,c:s.c})));
-  columns($('[data-chart]',f),{groups:names,series,divider:7,divLabels:['read the word','rewrite it'],label:(si)=>si===0,h:330,minW:640,aria:'Per-task accuracy'});
+  columns($('[data-chart]',f),{groups:names,series,divider:7,divLabels:['perception','string surgery'],label:(si)=>si===0,h:330,minW:640,aria:'Per-task accuracy'});
   dataTable($('[data-table]',f),['Task'].concat(series.map(s=>s.name)),names.map((n,i)=>[n.replace('\n',' ')].concat(series.map(s=>s.values[i]))));
 };
 /* Fig 4: blindfold */
 FIGS.f4=()=>{const f=$('#f4'),B=RES.blind;
-  const groups=['real words','made-up words','compressed\nwords','split\ndoubles'];
-  const series=[{name:'Retina signal on',c:'--s1',values:B.on},{name:'Switched off (blindfold)',c:'--sbase',values:B.off}];
+  const groups=['real','pseudowords','compound','cross-token\ndoubles'];
+  const series=[{name:'Retina on',c:'--s1',values:B.on},{name:'Ablated (scale = 0)',c:'--sbase',values:B.off}];
   legend($('[data-legend]',f),series.map(s=>({name:s.name,c:s.c})));
   columns($('[data-chart]',f),{groups,series,label:()=>true,groupNote:i=>'−'+(B.on[i]-B.off[i]).toFixed(1)+' pts',groupNoteY:i=>Math.max(B.on[i],B.off[i]),aria:'Accuracy with retina on and off'});
-  dataTable($('[data-table]',f),['Test set','Signal on','Switched off','Drop'],groups.map((g,i)=>[g.replace('\n',' '),B.on[i],B.off[i],B.on[i]-B.off[i]]));
+  dataTable($('[data-table]',f),['Split','Retina on','Ablated','Δ'],groups.map((g,i)=>[g.replace('\n',' '),B.on[i],B.off[i],B.on[i]-B.off[i]]));
 };
 /* Fig 5: illusion fidelity */
 FIGS.f5=()=>{const f=$('#f5'),F=RES.fid;
   const rows=['l0_lora','v1_lora','v1_frozen','v2_frozen','v2_lora'].map(k=>({name:ENT[k].name,short:ENT[k].short,c:ENT[k].c,v:F[k]}));
   hbars($('[data-chart]',f),{rows,aria:'Share of answers that follow an edited retina'});
-  dataTable($('[data-table]',f),['Design','Answers that follow (%)'],rows.map(r=>[r.name,r.v]));
+  dataTable($('[data-table]',f),['Design','Fidelity (%)'],rows.map(r=>[r.name,r.v]));
 };
 /* Fig 6: stress tests */
 FIGS.f6=()=>{const f=$('#f6'),t=segState(f).t,D=RES[t];
   const order=['v2_frozen','v2_lora','plain_lora','v1_frozen'];
-  const groups=t==='compound'?['letter-reading tasks (4)','all 7 tasks']:['normal tokenization','random re-chunking'];
+  const groups=t==='compound'?['perceptual (4 tasks)','all 7 tasks']:['canonical','random re-split'];
   const series=order.map(k=>({name:ENT[k].name,c:ENT[k].c,values:D[k]}));
-  $('#f6-sub').textContent=t==='compound'?'Made-up 9–13 letter strings packed into 3 tokens or fewer':'The same unseen words, cut into different valid tokens · 4 tasks: count, length, nth letter, reverse';
-  $('#f6-cap').innerHTML=t==='compound'?'<b>Compressed words.</b> The Word Retina reaches 96.9% on letter-reading tasks, against 64.4% for LoRA.':'<b>Re-chunked words.</b> Cutting the same letters into different tokens doesn\'t hurt the Word Retina (70.0 → 73.1). The ALU was not run on this saved test; its circuit scores 100% directly on every test set.';
+  $('#f6-sub').textContent=t==='compound'?'9–13 character pseudowords compressed to ≤3 tokens':'Canonical vs. random valid re-tokenization of the same bytes · count, length, nth, reverse';
+  $('#f6-cap').innerHTML=t==='compound'?'<b>Compound pseudowords.</b> V2 reaches 96.9% perceptual vs. 64.4% for LoRA.':'<b>Re-tokenization.</b> V2 is invariant to the split (70.0 → 73.1). The ALU was not evaluated on this split.';
   legend($('[data-legend]',f),series.map(s=>({name:s.name,c:s.c})));
   columns($('[data-chart]',f),{groups,series,label:()=>true,h:280,aria:'Stress test accuracy'});
   dataTable($('[data-table]',f),[''].concat(groups),series.map(s=>[s.name].concat(s.values)));
