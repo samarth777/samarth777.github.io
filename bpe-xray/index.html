@@ -166,6 +166,11 @@
   <li><strong>Write.</strong> For each output token <var>t</var>, we solve a post-norm direction <code>W_write[t]</code> against <code>lm_head</code>. Adding <code>γ·W_write[t]</code> then makes <var>t</var> the argmax.</li>
 </ul>
 
+<figure class="l-page" id="fig-alu-diagram">
+  <div class="demo"><div class="diagram" id="alu-diagram"></div></div>
+  <figcaption><strong>Figure 3.</strong> The <span class="c-alu">X-Ray ALU</span> at a glance. It reads the call from the token stream with vocabulary indicators and prefix sums, computes the answer from the compiled tables, and adds a solved direction <code>γ·W_write[t]</code> after the final norm so that <var>t</var> becomes the argmax. The 28 transformer layers are never modified.</figcaption>
+</figure>
+
 <p>
   Below, scrub through generation of one call. Each step shows the prefix-sum span state, whether the ALU is active, and what it writes.
 </p>

@@ -191,7 +191,9 @@ const letters = s => [...s.toLowerCase()].filter(c => c >= 'a' && c <= 'z');
     const sl = H('div', {}, top); H('div', { class: 'slots-l', text: 'E_alpha_chars [16]' }, sl);
     const slots = H('div', { class: 'slots' }, sl);
     for (let i = 0; i < 16; i++) { const v = alphas[i]; H('span', { class: v ? '' : 'e', text: v ? String.fromCharCode(96 + v) : '0' }, slots); }
-    const ro = H('div', { class: 'anat-readout', text: 'Hover a cell.' }, host);
+    const SEGC = { count: ['--x-retina', 'letter counts'], fl: ['--x-lora', 'first / last letter'], pos: ['--x-alu', 'first six / last four letters'], scalar: ['--x-sky', 'scalars'] };
+    const lg = H('div', { class: 'seglegend' }, host); Object.values(SEGC).forEach(([c, n]) => { const sp = H('span', {}, lg); const i = H('i', {}, sp); i.style.background = `var(${c})`; sp.appendChild(document.createTextNode(n)); });
+    const ro = H('div', { class: 'anat-readout', text: 'Hover a cell to see what it encodes.' }, host);
     const bc = H('div', { class: 'barcode' }, host);
     const cw = 15, ch = 15, gap = 2, lw = 196, top0 = 22;
     let y = top0; const rows = [];
@@ -207,15 +209,16 @@ const letters = s => [...s.toLowerCase()].filter(c => c >= 'a' && c <= 'z');
         const idx = s.a + j, v = F[idx];
         const x = lw + (s.kind === 'count' ? j + 1 : j) * (cw + gap);
         let fill = 'var(--x-card)', op = 1;
-        if (s.kind === 'count') { if (v) { fill = String.fromCharCode(97 + j) === 'r' ? 'var(--x-amber)' : 'var(--x-letter)'; op = Math.min(1, .45 + .3 * v); } }
-        else if (s.kind === 'scalar') { if (v) { fill = 'var(--x-retina)'; op = Math.min(1, .25 + v); } }
-        else if (v) fill = j === 0 ? 'var(--x-ink-3)' : 'var(--x-letter)';
-        const r = S('rect', { x, y: yy, width: cw, height: ch, rx: 2.5, style: `fill:${fill};opacity:${op};stroke:var(--x-rule);stroke-width:1` }, svg);
+        const segC = s.kind === 'count' ? '--x-retina' : s.kind === 'scalar' ? '--x-sky' : s.grp ? '--x-alu' : '--x-lora';
+        if (s.kind === 'count') { if (v) { fill = String.fromCharCode(97 + j) === 'r' ? 'var(--x-amber)' : `var(${segC})`; op = Math.min(1, .55 + .25 * v); } }
+        else if (s.kind === 'scalar') { if (v) { fill = `var(${segC})`; op = Math.min(1, .3 + v); } }
+        else if (v) { fill = j === 0 ? 'var(--x-ink-3)' : `var(${segC})`; }
+        const r = S('rect', { x, y: yy, width: cw, height: ch, rx: 3.5, style: `fill:${fill};opacity:${op};stroke:var(--x-paper-edge);stroke-width:1` }, svg);
         if (s.kind === 'count' && v) { const n = S('text', { x: x + cw / 2, y: yy + 11, 'text-anchor': 'middle', 'font-size': 9.5, style: 'fill:var(--global-bg-color,#fff);font-weight:700' }, svg); n.textContent = v; }
         
         const desc = s.kind === 'count' ? `count of '${String.fromCharCode(97 + j)}' = ${v}` : s.kind === 'scalar' ? `${SC[j]} = ${(+v.toFixed(2))}` : `${s.name}${s.grp ? ' (' + s.grp + ')' : ''} is ${j === 0 ? '"none"' : "'" + lt(j) + "'"}: ${v}`;
         r.addEventListener('pointerenter', () => { ro.textContent = `F_retina[${idx}]  ·  ${desc}`; r.style.stroke = 'var(--x-ink)'; });
-        r.addEventListener('pointerleave', () => { r.style.stroke = 'var(--x-rule)'; });
+        r.addEventListener('pointerleave', () => { r.style.stroke = 'var(--x-paper-edge)'; });
       }
     });
   }
@@ -249,7 +252,7 @@ const letters = s => [...s.toLowerCase()].filter(c => c >= 'a' && c <= 'z');
     const bit = (arr, f) => arr.map((v, i) => [i < t ? String(v) : '', i < t && v ? 'on' : '']);
     tr('bit', 'opened', bit(open));
     tr('bit', 'op · arg · |', toks.map((_, i) => [i < t ? (i === opPos ? 'op' : i === argPos ? 'arg' : i === sepPos ? '|' : '·') : '', i < t && [opPos, argPos, sepPos].includes(i) ? 'on' : '']));
-    tr('bit', 'closed', bit(close));
+    tr('bit cl', 'closed', bit(close));
     tr('act', 'ALU active', active.map((v, i) => [i < t ? (v ? 'on' : '·') : '', i < t && v ? 'on' : '']));
     tr('wr', 'writes', toks.map((_, i) => [i < t && writes[i] ? writes[i] : '', i < t && writes[i] ? 'w' : '']));
     tr('dh', '‖Δh‖', active.map((v, i) => [i < t ? (v ? 'γ' : '0') : '', i < t && v ? 'nz' : '']));
@@ -298,52 +301,100 @@ const letters = s => [...s.toLowerCase()].filter(c => c >= 'a' && c <= 'z');
 })();
 
 /* ================================================================== */
-/* Figure 7: three architectures                                       */
+/* Figure 9: three architectures, with labelled arrows                  */
+function arrowDefs(svg, id) {
+  const d = S('defs', {}, svg);
+  [['k', 'var(--x-ink-2)'], ['b', 'var(--x-retina)'], ['g', 'var(--x-ink-3)'], ['v', 'var(--x-alu)']].forEach(([n, c]) => {
+    const m = S('marker', { id: `${id}-${n}`, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, d);
+    S('path', { d: 'M0 1 L10 5 L0 9 z', style: `fill:${c}` }, m);
+  });
+}
+function T(svg, x, y, txt, o = {}) { const t = S('text', { x, y, 'text-anchor': o.a || 'start', 'font-size': o.fs || 11, style: `fill:${o.c || 'var(--x-ink-2)'};${o.mono ? 'font-family:var(--x-mono);' : ''}${o.w ? 'font-weight:' + o.w + ';' : ''}` }, svg); t.textContent = txt; return t; }
+function box(svg, x, y, w, h, o = {}) { return S('rect', { x, y, width: w, height: h, rx: o.rx ?? 8, style: `fill:${o.fill || 'var(--x-card)'};stroke:${o.stroke || 'var(--x-paper-edge)'};stroke-width:${o.sw || 1}${o.dash ? ';stroke-dasharray:' + o.dash : ''}` }, svg); }
+function arrow(svg, d, id, kind = 'k', o = {}) { return S('path', { d, fill: 'none', 'marker-end': `url(#${id}-${kind})`, style: `stroke:${kind === 'b' ? 'var(--x-retina)' : kind === 'v' ? 'var(--x-alu)' : kind === 'g' ? 'var(--x-ink-3)' : 'var(--x-ink-2)'};stroke-width:${o.sw || 1.4}${o.dash ? ';stroke-dasharray:' + o.dash : ''}` }, svg); }
+
 (function arch() {
   const host = $('#arch3'); if (!host) return;
   const A = [
-    { h: 'Layer-0 injection + LoRA', s: 'F_retina added to input embeddings; LoRA adapts every layer.', at: [0], kind: 'l0', col: '--x-l0', m: ['70.8%', '−2.4', '10%'] },
-    { h: 'Generic cross-attention (V1)', s: 'Attention taps read raw F_retina at layers 14, 20, 24. Host frozen.', at: [14, 20, 24], kind: 'v1', col: '--x-v1', m: ['55.0%', '−17.1', '16%'] },
-    { h: 'BPE-V2 Word Retina', s: 'A compiled recurrence makes word-level invariants; taps at 16, 20, 24. Host frozen.', at: [16, 20, 24], kind: 'v2', col: '--x-retina', m: ['97.1%', '−42.6', '88%'], win: true },
+    { v: ['no', 'Ignored'], h: 'Layer-0 injection + LoRA', s: 'F_retina is added to the input embeddings; LoRA adapts every layer.', at: [0], kind: 'l0', m: ['70.8%', '−2.4', '10%'] },
+    { v: ['meh', 'Weakly used'], h: 'Generic cross-attention (V1)', s: 'Attention taps read raw F_retina at layers 14, 20 and 24. Host frozen.', at: [14, 20, 24], kind: 'v1', m: ['55.0%', '−17.1', '16%'] },
+    { v: ['yes', 'Read causally'], h: 'BPE-V2 Word Retina', s: 'A compiled recurrence builds word-level invariants; taps at 16, 20 and 24. Host frozen.', at: [16, 20, 24], kind: 'v2', m: ['97.1%', '−42.6', '88%'], win: true },
   ];
-  A.forEach(a => {
-    const box = H('div', { class: 'a' + (a.win ? ' win' : '') }, host);
-    H('div', { class: 'ah', text: a.h }, box); H('div', { class: 'as', text: a.s }, box);
-    const W = 300, Ht = 168, svg = S('svg', { viewBox: `0 0 ${W} ${Ht}`, role: 'img', 'aria-label': a.h }, box);
-    const x0 = 46, lw = 6.2, gap = 2.3, yL = 92, hL = 46;
-    // tokens
-    ['str', 'aw', 'berry'].forEach((t, i) => { S('rect', { x: 4, y: yL - 4 + i * 17, width: 34, height: 14, rx: 3, style: 'fill:var(--x-card);stroke:var(--x-rule-2)' }, svg); const tx = S('text', { x: 21, y: yL + 6 + i * 17, 'text-anchor': 'middle', 'font-size': 9, style: 'fill:var(--x-ink-2);font-family:var(--x-mono)' }, svg); tx.textContent = t; });
-    for (let i = 0; i < 28; i++) {
-      const x = x0 + i * (lw + gap);
-      S('rect', { x, y: yL, width: lw, height: hL, rx: 1.5, style: `fill:${a.kind === 'l0' ? 'var(--x-lora)' : 'var(--x-ink-3)'};opacity:${a.kind === 'l0' ? .55 : .22}` }, svg);
-    }
-    const lx = i => x0 + i * (lw + gap) + lw / 2;
-    const out = S('text', { x: lx(27) + 14, y: yL + hL / 2 + 5, 'font-size': 14, style: 'fill:var(--x-ink);font-weight:600' }, svg); out.textContent = '3';
-    [0, 27].forEach(i => { const t = S('text', { x: lx(i), y: yL + hL + 13, 'text-anchor': 'middle', 'font-size': 8.5, style: 'fill:var(--x-ink-3)' }, svg); t.textContent = i; });
-    a.at.filter(i => i).forEach(i => { const t = S('text', { x: lx(i), y: yL + hL + 13, 'text-anchor': 'middle', 'font-size': 8.5, style: 'fill:var(--x-ink-3)' }, svg); t.textContent = i; });
-    // source box(es)
+  A.forEach((a, ai) => {
+    const bx = H('div', { class: 'a' + (a.win ? ' win' : '') }, host);
+    H('span', { class: 'verdict ' + a.v[0], text: a.v[1] }, bx); H('div', { class: 'ah', text: a.h }, bx); H('div', { class: 'as', text: a.s }, bx);
+    const W = 320, Ht = 200, id = 'arch' + ai, svg = S('svg', { viewBox: `0 0 ${W} ${Ht}`, role: 'img', 'aria-label': a.h }, bx);
+    arrowDefs(svg, id);
+    const x0 = 58, lw = 5.4, gap = 2, yL = 112, hL = 44, lx = i => x0 + i * (lw + gap) + lw / 2;
+    // input tokens -> stack
+    ['str', 'aw', 'berry'].forEach((t, i) => { box(svg, 2, yL - 3 + i * 17, 38, 14, { rx: 2 }); T(svg, 21, yL + 7 + i * 17, t, { a: 'middle', fs: 9, mono: 1 }); });
+    arrow(svg, `M42 ${yL + hL / 2} H${x0 - 6}`, id);
+    for (let i = 0; i < 28; i++) S('rect', { x: x0 + i * (lw + gap), y: yL, width: lw, height: hL, rx: 1, style: `fill:${a.kind === 'l0' ? 'var(--x-lora)' : 'var(--x-frozen)'};opacity:${a.kind === 'l0' ? .55 : 1}` }, svg);
+    arrow(svg, `M${lx(27) + 6} ${yL + hL / 2} H${lx(27) + 26}`, id);
+    T(svg, lx(27) + 31, yL + hL / 2 + 5, '3', { fs: 14, c: 'var(--x-ink)', w: 600, mono: 1 });
+    [0, 27, ...a.at.filter(i => i)].forEach(i => T(svg, lx(i), yL + hL + 13, String(i), { a: 'middle', fs: 8.5, c: 'var(--x-ink-3)', mono: 1 }));
+    T(svg, x0, yL + hL + 30, a.kind === 'l0' ? '✎ every layer LoRA-adapted' : '❄ all 28 layers frozen', { fs: 9.5, c: a.kind === 'l0' ? 'var(--x-lora-ink)' : 'var(--x-ink-3)' });
+    // source box(es): two-line, so connecting lines never cross labels
+    const col = a.kind === 'v2' ? 'b' : 'k';
     let srcX;
+    const two = (x, w, l1, l2, o = {}) => { box(svg, x, 8, w, 40, o); T(svg, x + w / 2, 24, l1, { a: 'middle', fs: 10.5, c: o.ink || 'var(--x-ink)', mono: 1, w: o.ink ? 600 : 400 }); T(svg, x + w / 2, 39, l2, { a: 'middle', fs: 9, c: 'var(--x-ink-3)' }); };
     if (a.kind === 'v2') {
-      S('rect', { x: 52, y: 8, width: 86, height: 26, rx: 5, style: 'fill:var(--x-card);stroke:var(--x-rule-2)' }, svg);
-      const b1 = S('text', { x: 95, y: 25, 'text-anchor': 'middle', 'font-size': 10.5, style: 'fill:var(--x-ink);font-family:var(--x-mono)' }, svg); b1.textContent = 'F_retina';
-      S('path', { d: 'M140 21 H158', fill: 'none', style: 'stroke:var(--x-ink-3);stroke-width:1.5' }, svg);
-      S('rect', { x: 160, y: 8, width: 92, height: 26, rx: 5, style: 'fill:var(--x-retina-wash);stroke:var(--x-retina)' }, svg);
-      const b2 = S('text', { x: 206, y: 25, 'text-anchor': 'middle', 'font-size': 10.5, style: 'fill:var(--x-retina-ink);font-family:var(--x-mono);font-weight:600' }, svg); b2.textContent = 'scanner';
-      srcX = 206;
+      two(58, 92, 'F_retina', 'per token');
+      arrow(svg, 'M152 28 H172', id);
+      two(176, 112, 'word scanner', 'Σ per-token rows', { fill: 'var(--x-retina-wash)', stroke: 'var(--x-retina)', ink: 'var(--x-retina-ink)' });
+      srcX = 232;
     } else {
-      S('rect', { x: 96, y: 8, width: 108, height: 26, rx: 5, style: 'fill:var(--x-card);stroke:var(--x-rule-2)' }, svg);
-      const bt = S('text', { x: 150, y: 25, 'text-anchor': 'middle', 'font-size': 10.5, style: 'fill:var(--x-ink);font-family:var(--x-mono)' }, svg); bt.textContent = 'F_retina[ids]';
-      srcX = 150;
+      two(96, 124, 'F_retina[ids]', a.kind === 'l0' ? 'per-token features' : 'raw per-token features');
+      srcX = 158;
     }
-    const lo = Math.min(srcX, ...a.at.map(lx)), hi = Math.max(srcX, ...a.at.map(lx));
-    const path = `M${srcX} 34 V60 M${lo} 60 H${hi} ` + a.at.map(i => `M${lx(i)} 60 V${yL - 2}`).join(' ');
-    S('path', { d: path, fill: 'none', style: `stroke:var(${a.col});stroke-width:2;stroke-linecap:round` }, svg);
-    a.at.forEach(i => S('circle', { cx: lx(i), cy: yL - 2, r: 3.2, style: `fill:var(${a.col})` }, svg));
-    if (a.kind === 'l0') { const t = S('text', { x: lx(27), y: yL - 6, 'text-anchor': 'end', 'font-size': 9.5, style: 'fill:var(--x-lora-ink)' }, svg); t.textContent = 'LoRA on all layers'; }
-    else { const t = S('text', { x: lx(27), y: yL + hL + 26, 'text-anchor': 'end', 'font-size': 9.5, style: 'fill:var(--x-ink-3)' }, svg); t.textContent = 'frozen host'; }
-    const m = H('div', { class: 'am' }, box);
-    [['perceptual', a.m[0]], ['ablation Δ', a.m[1]], ['illusion', a.m[2]]].forEach(([l, v]) => H('div', { html: `<b>${v}</b>${l}` }, m));
+    const busY = 76, lo = Math.min(srcX, ...a.at.map(lx)), hi = Math.max(srcX, ...a.at.map(lx));
+    S('path', { d: `M${srcX} 48 V${busY} M${lo} ${busY} H${hi}`, fill: 'none', style: `stroke:${col === 'b' ? 'var(--x-retina)' : 'var(--x-ink-2)'};stroke-width:1.4` }, svg);
+    a.at.forEach(i => arrow(svg, `M${lx(i)} ${busY} V${yL - 3}`, id, col));
+    if (a.kind === 'l0') T(svg, hi + 6, busY + 4, 'added at layer 0', { fs: 9.5 });
+    else T(svg, lo - 6, busY + 4, 'residual taps', { a: 'end', fs: 9.5, c: col === 'b' ? 'var(--x-retina-ink)' : 'var(--x-ink-2)' });
+    const m = H('div', { class: 'am' }, bx);
+    [['perceptual', a.m[0]], ['ablation Δ', a.m[1]], ['illusion fidelity', a.m[2]]].forEach(([l, v]) => H('div', { html: `<b>${v}</b>${l}` }, m));
   });
+})();
+
+/* ================================================================== */
+/* Figure 4: ALU block diagram                                          */
+(function aluDiagram() {
+  const host = $('#alu-diagram'); if (!host) return;
+  const W = 1080, Ht = 300, id = 'ad', svg = S('svg', { viewBox: `0 0 ${W} ${Ht}`, role: 'img', 'aria-label': 'X-Ray ALU block diagram' }, host);
+  arrowDefs(svg, id);
+  const yT = 34, hT = 64, cy = yT + hT / 2;
+  // frozen path
+  box(svg, 10, yT, 178, hT); T(svg, 22, yT + 22, 'Input tokens', { fs: 12.5, c: 'var(--x-ink)', w: 600 });
+  T(svg, 22, yT + 42, '[XRAY count r |', { fs: 11.5, mono: 1 }); T(svg, 22, yT + 57, ' strawberry]=', { fs: 11.5, mono: 1 });
+  arrow(svg, `M188 ${cy} H226`, id);
+  box(svg, 230, yT, 330, hT); T(svg, 242, yT + 20, 'Frozen transformer · 28 layers', { fs: 12.5, c: 'var(--x-ink)', w: 600 });
+  for (let i = 0; i < 28; i++) S('rect', { x: 244 + i * 11, y: yT + 30, width: 8, height: 24, rx: 2, style: 'fill:var(--x-frozen)' }, svg);
+  T(svg, 548, yT + 20, '❄ frozen', { a: 'end', fs: 10.5, c: 'var(--x-ink-3)' });
+  arrow(svg, `M560 ${cy} H596`, id);
+  box(svg, 600, yT, 130, hT); T(svg, 665, cy - 3, 'final', { a: 'middle', fs: 12.5, c: 'var(--x-ink)', w: 600 }); T(svg, 665, cy + 14, 'RMSNorm', { a: 'middle', fs: 12.5, c: 'var(--x-ink)', w: 600 });
+  arrow(svg, `M730 ${cy} H770`, id);
+  S('circle', { cx: 784, cy, r: 13, style: 'fill:var(--x-alu-wash);stroke:var(--x-alu);stroke-width:1.6' }, svg); T(svg, 784, cy + 5, '+', { a: 'middle', fs: 16, c: 'var(--x-alu-ink)', w: 600 });
+  arrow(svg, `M797 ${cy} H836`, id);
+  box(svg, 840, yT, 104, hT); T(svg, 892, cy + 5, 'lm_head', { a: 'middle', fs: 12.5, c: 'var(--x-ink)', w: 600, mono: 1 });
+  arrow(svg, `M944 ${cy} H980`, id);
+  box(svg, 984, yT, 86, hT, { stroke: 'var(--x-alu)', fill: 'var(--x-alu-wash)', rx: 10 }); T(svg, 1027, yT + 22, 'next token', { a: 'middle', fs: 11, c: 'var(--x-ink-2)' }); T(svg, 1027, yT + 50, '3', { a: 'middle', fs: 22, c: 'var(--x-alu-ink)', w: 600, mono: 1 });
+  // ALU lane
+  const yB = 196, hB = 76, cyB = yB + hB / 2;
+  S('rect', { x: 216, y: yB - 26, width: 690, height: hB + 40, rx: 14, style: 'fill:var(--x-alu-wash);stroke:var(--x-alu);stroke-width:1;stroke-dasharray:4 4' }, svg);
+  T(svg, 232, yB - 10, 'X-RAY ALU · hand-compiled, 0 trained parameters', { fs: 10.5, c: 'var(--x-alu-ink)', mono: 1, w: 600 });
+  const stage = (x, w, n, t1, t2, t3) => { box(svg, x, yB, w, hB, { fill: 'var(--x-card)', stroke: 'var(--x-alu)', rx: 10 }); T(svg, x + 12, yB + 20, n + '  ' + t1, { fs: 12.5, c: 'var(--x-ink)', w: 600 }); T(svg, x + 12, yB + 41, t2, { fs: 11, mono: 1 }); T(svg, x + 12, yB + 59, t3, { fs: 11, c: 'var(--x-ink-3)' }); };
+  stage(232, 206, '1', 'Read', 'indicators + prefix sums', 'op = count · arg = r · span');
+  stage(470, 220, '2', 'Compute', "Σ E_hist[span]['r'] = 3", 'ReLU digit extractor');
+  stage(722, 170, '3', 'Write', "+ γ·W_write['3']", 'argmax becomes "3"');
+  arrow(svg, `M438 ${cyB} H466`, id, 'v'); arrow(svg, `M690 ${cyB} H718`, id, 'v');
+  arrow(svg, `M784 ${yB - 26} V${cy + 16}`, id, 'v');
+  T(svg, 792, 150, 'active only inside', { fs: 10.5, c: 'var(--x-ink-2)' }); T(svg, 792, 164, '[XRAY …]= ; else identity', { fs: 10.5, c: 'var(--x-ink-2)', mono: 1 });
+  // token ids into Read, bank into Compute
+  arrow(svg, `M99 ${yT + hT} V${cyB} H228`, id, 'g');
+  T(svg, 108, 150, 'token IDs', { fs: 10.5, c: 'var(--x-ink-3)' });
+  box(svg, 470, 118, 220, 30, { dash: '3 3' }); T(svg, 580, 137, 'CharWeightBank · E_hist, E_alpha_chars', { a: 'middle', fs: 10.5, c: 'var(--x-ink-2)', mono: 1 });
+  arrow(svg, `M580 148 V${yB - 4}`, id, 'g');
 })();
 
 /* ================================================================== */
@@ -417,7 +468,9 @@ const letters = s => [...s.toLowerCase()].filter(c => c >= 'a' && c <= 'z');
     const orig = [1, 0, 2];
     host.innerHTML = `<div class="ill">
       <div class="ill-col"><h5>Input tokens · fixed</h5><div class="ill-prompt">${toks.map((t, i) => `<span class="${i === 14 ? 'pert' : ''}">${showTok(t)}</span>`).join(' ')}</div></div>
+      <div class="arr" aria-hidden="true">→</div>
       <div class="ill-col"><h5>F_retina['r'] per token</h5><div class="ill-ret">${['str', 'aw', 'berry'].map((t, i) => `<div class="c"><div class="b ${orig[i] !== r[i] ? 'ed' : ''}"><i style="height:${r[i] / 5 * 100}%"></i><em>${r[i]}</em></div>${t}</div>`).join('')}<div class="c"><div class="b ${d ? 'ed' : ''}"><i style="height:${(3 + d) / 6 * 100}%"></i><em>${3 + d}</em></div>word</div></div></div>
+      <div class="arr" aria-hidden="true">→</div>
       <div class="ill-col ill-out"><h5>Next-token prediction</h5><div class="ill-pred ${ok ? 'y' : 'n'}">${pred}</div>
         <div class="ill-st">illusion target ${tgt} · true count 3<br>${ok ? '<span class="c-retina">follows the retina</span>' : 'ignores the edit'}</div>
         <div class="ill-sweep">${[-2, -1, 0, 1, 2, 3].map(v => `<div data-d="${v}" class="${c.p[v] === String(3 + v) ? 'hit' : ''} ${v === d ? 'cur' : ''}">δ ${v > 0 ? '+' : ''}${v}<b>${c.p[v]}</b></div>`).join('')}</div></div>
@@ -431,14 +484,14 @@ const letters = s => [...s.toLowerCase()].filter(c => c >= 'a' && c <= 'z');
 /* Charts                                                              */
 const ENT = {
   v2_frozen: { name: 'BPE-V2 Word Retina (frozen)', short: 'Word Retina', c: '--x-retina' },
-  v2_lora: { name: 'BPE-V2 + LoRA', short: 'V2 + LoRA', c: '--x-alu' },
+  v2_lora: { name: 'BPE-V2 + LoRA', short: 'V2 + LoRA', c: '--x-blue2' },
   plain_lora: { name: 'Plain LoRA', short: 'LoRA', c: '--x-lora' },
-  v1_frozen: { name: 'Generic V1 (frozen)', short: 'V1', c: '--x-v1' },
+  v1_frozen: { name: 'Generic V1 (frozen)', short: 'V1', c: '--x-v1', dash: '6 5' },
   v1_lora: { name: 'Generic V1 + LoRA', short: 'V1 + LoRA', c: '--x-v1' },
-  retina_lora: { name: 'Layer-0 retina + LoRA', short: 'Layer-0', c: '--x-l0' },
+  retina_lora: { name: 'Layer-0 retina + LoRA', short: 'Layer-0', c: '--x-l0', dash: '2 4' },
   l0_lora: { name: 'Layer-0 retina + LoRA', short: 'Layer-0', c: '--x-l0' },
 };
-function legend(el, items) { const L = H('div', { class: 'legend' }, el); items.forEach(it => { const s = H('span', {}, L); const i = H('i', { class: it.line ? 'ln' : '' }, s); i.style.background = `var(${it.c})`; if (it.hollow) { i.style.background = 'transparent'; i.style.boxShadow = `inset 0 0 0 2px var(${it.c})`; } s.appendChild(document.createTextNode(it.name)); }); }
+function legend(el, items) { const L = H('div', { class: 'legend' }, el); items.forEach(it => { const s = H('span', {}, L); const i = H('i', { class: (it.line ? 'ln' : '') + (it.dash ? ' dash' : '') }, s); i.style.background = `var(${it.c})`; i.style.setProperty('--c', `var(${it.c})`); if (it.hollow) { i.style.background = 'transparent'; i.style.boxShadow = `inset 0 0 0 2px var(${it.c})`; } s.appendChild(document.createTextNode(it.name)); }); }
 
 /* dot-row chart (Cleveland dots / dumbbells) */
 function dotRows(el, o) {
@@ -451,6 +504,7 @@ function dotRows(el, o) {
   if (o.title) { const t = S('text', { x: 0, y: 14, class: 'ttl' }, svg); t.textContent = o.title; if (o.sub) { const s = S('text', { x: 0, y: 30, 'font-size': 11.5 }, svg); s.textContent = o.sub; } }
   [0, 25, 50, 75, 100].forEach(v => { S('line', { x1: X(v), x2: X(v), y1: m.t - 6, y2: Ht - m.b, class: 'grid' }, svg); const t = S('text', { x: X(v), y: m.t - 10, 'text-anchor': 'middle', 'font-size': 11 }, svg); t.textContent = v + (v === 100 ? '%' : ''); });
   if (o.valueKey && o.valueHead) { const t = S('text', { x: W - 2, y: m.t - 10, 'text-anchor': 'end', 'font-size': 11, style: 'fill:var(--x-ink-2);font-weight:600' }, svg); t.textContent = o.valueHead; }
+  if (o.groupTint) { const gs = {}; o.rows.forEach((r, i) => { if (!r.group) return; (gs[r.group] = gs[r.group] || []).push(ys[i]); }); Object.entries(gs).forEach(([g, yy]) => { const c = o.groupTint[g]; if (c) S('rect', { x: m.l - 4, y: Math.min(...yy) - rh / 2, width: pw + 8, height: Math.max(...yy) - Math.min(...yy) + rh, rx: 8, style: `fill:var(${c})` }, svg); }); }
   o.rows.forEach((r, i) => {
     const yc = ys[i];
     if (r.group && (i === 0 || o.rows[i - 1].group !== r.group)) { const g = S('text', { x: 2, y: yc - rh / 2 - 6, 'font-size': 10.5, style: 'fill:var(--x-ink-3);letter-spacing:.06em;text-transform:uppercase' }, svg); g.textContent = r.group.toUpperCase(); }
@@ -458,8 +512,8 @@ function dotRows(el, o) {
     S('rect', { x: 0, y: yc - rh / 2, width: W, height: rh, class: 'hl', style: 'fill:transparent', rx: 3 }, grp);
     const lt = S('text', { x: m.l - 12, y: yc + 4, 'text-anchor': 'end', class: 'tl', 'font-size': small ? 11.5 : 12.5 }, grp); lt.textContent = r.label;
     const vals = o.series.map(s => r.v[s.key]).filter(v => v != null);
-    if (o.connect !== false && vals.length > 1) S('line', { x1: X(Math.min(...vals)), x2: X(Math.max(...vals)), y1: yc, y2: yc, style: 'stroke:var(--x-rule-2);stroke-width:2;stroke-linecap:round' }, grp);
-    o.series.forEach(s => { const v = r.v[s.key]; if (v == null) return; S('circle', { cx: X(v), cy: yc, r: 5.5, style: s.hollow ? `fill:var(--global-bg-color,#fff);stroke:var(${s.c});stroke-width:2` : `fill:var(${s.c});stroke:var(--global-bg-color,#fff);stroke-width:2` }, grp); });
+    if (o.connect !== false && vals.length > 1) S('line', { x1: X(Math.min(...vals)), x2: X(Math.max(...vals)), y1: yc, y2: yc, style: 'stroke:var(--x-frozen);stroke-width:5;stroke-linecap:round' }, grp);
+    o.series.forEach(s => { const v = r.v[s.key]; if (v == null) return; S('circle', { cx: X(v), cy: yc, r: 6.5, style: s.hollow ? `fill:var(--x-card);stroke:var(${s.c});stroke-width:2.2` : `fill:var(${s.c});stroke:var(--x-card);stroke-width:2` }, grp); });
     if (o.valueKey && r.v[o.valueKey] != null) { const v = r.v[o.valueKey]; const t = S('text', { x: W - 2, y: yc + 4, class: 'vl', 'text-anchor': 'end' }, grp); t.textContent = o.valueFmt ? o.valueFmt(r) : Math.round(v); }
     const on = e => showTip(e, r.label, o.series.filter(s => r.v[s.key] != null).map(s => [s.name, pct(r.v[s.key]), cssv(s.c)]));
     grp.addEventListener('pointermove', on); grp.addEventListener('pointerleave', hideTip); grp.addEventListener('focus', on); grp.addEventListener('blur', hideTip);
@@ -474,12 +528,12 @@ function lineChart(el, o) {
   [0, 25, 50, 75, 100].forEach(v => { S('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'grid' }, svg); const t = S('text', { x: m.l - 8, y: Y(v) + 4, 'text-anchor': 'end', 'font-size': 11 }, svg); t.textContent = v + (v === 100 ? '%' : ''); });
   o.x.forEach((v, i) => { const t = S('text', { x: X(i), y: Ht - m.b + 18, 'text-anchor': 'middle', 'font-size': 11.5 }, svg); t.textContent = v.toLocaleString(); });
   const xt = S('text', { x: m.l + pw / 2, y: Ht - 2, 'text-anchor': 'middle', 'font-size': 11 }, svg); xt.textContent = 'training examples (log scale)';
-  S('line', { x1: m.l, x2: W - m.r, y1: Y(o.ref), y2: Y(o.ref), style: 'stroke:var(--x-base);stroke-width:2' }, svg);
+  S('rect', { x: m.l, y: Y(o.ref), width: pw, height: Y(0) - Y(o.ref), style: 'fill:var(--x-frozen);opacity:.55' }, svg); S('line', { x1: m.l, x2: W - m.r, y1: Y(o.ref), y2: Y(o.ref), style: 'stroke:var(--x-l0);stroke-width:1.5' }, svg);
   const rt = S('text', { x: m.l + 6, y: Y(o.ref) - 6, 'font-size': 11 }, svg); rt.textContent = 'frozen base · ' + pct(o.ref);
   const xh = S('line', { y1: m.t, y2: Ht - m.b, style: 'stroke:var(--x-ink-3);stroke-width:1;opacity:0' }, svg);
   o.series.forEach(s => {
-    S('path', { d: s.values.map((v, i) => (i ? 'L' : 'M') + X(i) + ',' + Y(v)).join(''), fill: 'none', style: `stroke:var(${s.c});stroke-width:2;stroke-linejoin:round;stroke-linecap:round` }, svg);
-    s.values.forEach((v, i) => S('circle', { cx: X(i), cy: Y(v), r: 4, style: `fill:var(${s.c});stroke:var(--global-bg-color,#fff);stroke-width:2` }, svg));
+    S('path', { d: s.values.map((v, i) => (i ? 'L' : 'M') + X(i) + ',' + Y(v)).join(''), fill: 'none', style: `stroke:var(${s.c});stroke-width:${s.dash ? 2 : 3};stroke-linejoin:round;stroke-linecap:round${s.dash ? ';stroke-dasharray:' + s.dash : ''}` }, svg);
+    s.values.forEach((v, i) => S('circle', { cx: X(i), cy: Y(v), r: s.dash ? 3.5 : 5, style: `fill:var(${s.c});stroke:var(--x-card);stroke-width:2` }, svg));
   });
   if (!small) { // end labels, nudged apart with leader lines when needed
     const ends = o.series.map(s => ({ s, y: Y(s.values.at(-1)) })).sort((a, b) => a.y - b.y);
@@ -505,7 +559,7 @@ function bars(el, o) {
     const g = S('g', { class: 'row', tabindex: 0, 'aria-label': `${r.name}: ${r.v}%` }, svg);
     S('rect', { x: 0, y: yc - rh / 2, width: W, height: rh, class: 'hl', style: 'fill:transparent', rx: 3 }, g);
     const t = S('text', { x: m.l - 12, y: yc + 4, 'text-anchor': 'end', class: 'tl', 'font-size': small ? 11.5 : 12.5 }, g); t.textContent = small ? r.short : r.name;
-    S('path', { d: `M${X(0)},${yc - 7}H${X(0) + w - rr}Q${X(0) + w},${yc - 7} ${X(0) + w},${yc - 7 + rr}V${yc + 7 - rr}Q${X(0) + w},${yc + 7} ${X(0) + w - rr},${yc + 7}H${X(0)}Z`, style: `fill:var(${r.c})` }, g);
+    S('rect', { x: X(0), y: yc - 9, width: pw, height: 18, rx: 9, style: 'fill:var(--x-frozen);opacity:.55' }, g); S('rect', { x: X(0), y: yc - 9, width: Math.max(18, w), height: 18, rx: 9, style: `fill:var(${r.c})` }, g);
     const v = S('text', { x: X(0) + w + 8, y: yc + 4, class: 'vl' }, g); v.textContent = Math.round(r.v) + '%';
     const on = e => showTip(e, r.name, [['edits followed', pct(r.v), cssv(r.c)]]);
     g.addEventListener('pointermove', on); g.addEventListener('pointerleave', hideTip); g.addEventListener('focus', on); g.addEventListener('blur', hideTip);
@@ -516,21 +570,21 @@ const CH = {};
 CH.alu = () => {
   const el = $('#chart-alu'); el.innerHTML = '';
   const split = $('#fig-alu .seg button.on').dataset.v;
-  const wrap = H('div', {}, el); legend(wrap, [{ name: 'Base model (2-shot)', c: '--x-base' }, { name: '+ X-Ray ALU', c: '--x-alu' }]);
+  const wrap = H('div', {}, el); legend(wrap, [{ name: 'Base model (2-shot)', c: '--x-v1', hollow: true }, { name: '+ X-Ray ALU', c: '--x-alu' }]);
   const grid = H('div', {}, el); const W = el.clientWidth, cols = W < 760 ? 1 : 3; grid.style.cssText = `display:grid;grid-template-columns:repeat(${cols},1fr);gap:24px`;
   const T = [['count', 'count'], ['length', 'length'], ['nth', 'nth'], ['spell', 'spell'], ['reverse', 'reverse'], ['rot13', 'rot13']];
   Object.keys(R.alu).forEach(model => {
     const A = R.alu[model], cell = H('div', {}, grid);
     const rows = T.map(([k, l]) => ({ label: l, v: { b: A[k + '_' + split][0], a: A[k + '_' + split][1] } }));
     if (split === 'real') rows.push({ label: 'multi-word', v: { b: A.count_multiword[0], a: A.count_multiword[1] } });
-    dotRows(cell, { title: model, sub: `compiled in ${R.aluCompile[model].toFixed(1)} s`, rows, labelW: 82, rightPad: 18, series: [{ key: 'b', name: 'Base (2-shot)', c: '--x-base' }, { key: 'a', name: '+ ALU', c: '--x-alu' }], aria: model });
+    dotRows(cell, { title: model, sub: `compiled in ${R.aluCompile[model].toFixed(1)} s`, rows, labelW: 82, rightPad: 18, series: [{ key: 'b', name: 'Base (2-shot)', c: '--x-v1', hollow: true }, { key: 'a', name: '+ ALU', c: '--x-alu' }], aria: model });
   });
 };
 CH.eff = () => {
   const el = $('#chart-eff'); el.innerHTML = '';
   const j = +$('#fig-eff .seg button.on').dataset.v, E = R.eff;
   const series = ['v2_frozen', 'plain_lora', 'retina_lora', 'v1_frozen'].map(k => ({ ...ENT[k], values: E[k].map(r => r[j]) }));
-  legend(el, series.map(s => ({ name: s.name, c: s.c, line: true })));
+  legend(el, series.map(s => ({ name: s.name, c: s.c, line: true, dash: s.dash })));
   const box = H('div', {}, el);
   lineChart(box, { x: E.v2_frozen.map(r => r[0]), series, ref: j === 1 ? R.baseReal.perc : R.baseReal.all, aria: 'Accuracy versus training examples' });
 };
@@ -541,23 +595,23 @@ CH.tasks = () => {
   const series = [{ key: 'plain_lora', ...ENT.plain_lora }, { key: 'v2_lora', ...ENT.v2_lora }, { key: 'v2_frozen', ...ENT.v2_frozen }];
   legend(el, series.slice().reverse().map(s => ({ name: s.name, c: s.c })));
   const box = H('div', {}, el);
-  dotRows(box, { rows: names.map((n, i) => ({ label: n, group: grp(i), v: { plain_lora: T.plain_lora[i], v2_lora: T.v2_lora[i], v2_frozen: T.v2_frozen[i] } })), series, valueKey: 'v2_frozen', valueHead: 'V2', valueFmt: r => Math.round(r.v.v2_frozen), labelW: 150, rightPad: 50, aria: 'Per-task accuracy' });
+  dotRows(box, { rows: names.map((n, i) => ({ label: n, group: grp(i), v: { plain_lora: T.plain_lora[i], v2_lora: T.v2_lora[i], v2_frozen: T.v2_frozen[i] } })), series, valueKey: 'v2_frozen', valueHead: 'V2', valueFmt: r => Math.round(r.v.v2_frozen), labelW: 150, rightPad: 50, groupTint: { perceptual: '--x-retina-wash', 'OOD (never trained)': '--x-alu-wash', 'string surgery': '--x-lora-wash' }, aria: 'Per-task accuracy' });
 };
 CH.ablate = () => {
   const el = $('#chart-ablate'); el.innerHTML = '';
   const B = R.blind, names = ['held-out words', 'pseudowords', 'compound', 'cross-token doubles'];
-  legend(el, [{ name: 'Retina on', c: '--x-retina' }, { name: 'Ablated (scale = 0)', c: '--x-base' }]);
+  legend(el, [{ name: 'Retina on', c: '--x-retina' }, { name: 'Ablated (scale = 0)', c: '--x-v1', hollow: true }]);
   const box = H('div', {}, el);
-  dotRows(box, { rows: names.map((n, i) => ({ label: n, v: { on: B.on[i], off: B.off[i] } })), series: [{ key: 'off', name: 'Ablated', c: '--x-base' }, { key: 'on', name: 'Retina on', c: '--x-retina' }], valueKey: 'on', valueHead: 'Δ', valueFmt: r => '−' + (r.v.on - r.v.off).toFixed(1), labelW: 150, rightPad: 60, aria: 'Ablation' });
+  dotRows(box, { rows: names.map((n, i) => ({ label: n, v: { on: B.on[i], off: B.off[i] } })), series: [{ key: 'off', name: 'Ablated', c: '--x-v1', hollow: true }, { key: 'on', name: 'Retina on', c: '--x-retina' }], valueKey: 'on', valueHead: 'Δ', valueFmt: r => '−' + (r.v.on - r.v.off).toFixed(1), labelW: 150, rightPad: 60, aria: 'Ablation' });
 };
 CH.fid = () => {
   const el = $('#chart-fid'); el.innerHTML = '';
-  bars(el, { rows: ['l0_lora', 'v1_lora', 'v1_frozen', 'v2_frozen', 'v2_lora'].map(k => ({ name: ENT[k].name, short: ENT[k].short, c: ENT[k].c, v: R.fid[k] })), aria: 'Illusion fidelity' });
+  bars(el, { rows: ['l0_lora', 'v1_lora', 'v1_frozen', 'v2_frozen', 'v2_lora'].map(k => ({ name: ENT[k].name, short: ENT[k].short, c: k.startsWith('v2') ? ENT[k].c : '--x-l0', v: R.fid[k] })), aria: 'Illusion fidelity' });
 };
 CH.stress = () => {
   const el = $('#chart-stress'); el.innerHTML = '';
   const order = ['v2_frozen', 'v2_lora', 'plain_lora', 'v1_frozen'];
-  const a = H('div', {}, el), b = H('div', {}, el);
+  const a = H('div', { class: 'chartbox' }, el), b = H('div', { class: 'chartbox' }, el);
   const mk = (box, title, sub, data, k1, k2, n1, n2) => {
     legend(box, [{ name: n1, c: '--x-ink-2', hollow: true }, { name: n2, c: '--x-ink-2' }]);
     const inner = H('div', {}, box);
@@ -569,6 +623,11 @@ CH.stress = () => {
   mk(a, 'Compound pseudowords', 'all 7 tasks (○) vs. perceptual (●)', { v2_frozen: [R.compound.v2_frozen[1], R.compound.v2_frozen[0]], v2_lora: [R.compound.v2_lora[1], R.compound.v2_lora[0]], plain_lora: [R.compound.plain_lora[1], R.compound.plain_lora[0]], v1_frozen: [R.compound.v1_frozen[1], R.compound.v1_frozen[0]] }, 'a', 'p', 'all 7 tasks', 'perceptual');
   mk(b, 'Re-tokenization', 'canonical (○) vs. random re-split (●) · count, length, nth, reverse', R.retok, 'c', 's', 'canonical', 'random re-split');
 };
+
+(function numberFigures() {
+  let n = 0;
+  $$('d-article figure figcaption > strong:first-child').forEach(st => { if (/^Figure \d+\./.test(st.textContent)) { n++; st.textContent = `Figure ${n}.`; } });
+})();
 
 function wire(figId, fn) { $$(`#${figId} .seg`).forEach(s => $$('button', s).forEach(btn => btn.onclick = () => { $$('button', s).forEach(x => x.classList.remove('on')); btn.classList.add('on'); fn(); })); }
 wire('fig-alu', CH.alu); wire('fig-eff', CH.eff);
