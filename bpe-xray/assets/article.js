@@ -50,15 +50,19 @@ function knob(host, o) {
     if (nv === v && !force) return; v = nv;
     const p = (v - min) / (max - min) * 100;
     k.querySelector('.kn').style.left = p + '%'; k.querySelector('.tf').style.width = p + '%';
-    k.setAttribute('aria-valuenow', v); if (lab) lab.textContent = label(v);
+    k.setAttribute('aria-valuenow', v);
+    if (lab) {
+      lab.textContent = label(v);
+      k.setAttribute('aria-valuetext', lab.textContent);
+    }
     onInput(v);
   }
   const fromEvt = e => { const r = k.getBoundingClientRect(); return min + (e.clientX - r.left) / r.width * (max - min); };
-  k.addEventListener('pointerdown', e => { k.setPointerCapture(e.pointerId); k.classList.add('drag'); set(fromEvt(e)); });
+  k.addEventListener('pointerdown', e => { k.focus({ preventScroll: true }); k.setPointerCapture(e.pointerId); k.classList.add('drag'); set(fromEvt(e)); });
   k.addEventListener('pointermove', e => { if (k.classList.contains('drag')) set(fromEvt(e)); });
-  ['pointerup', 'pointercancel'].forEach(ev => k.addEventListener(ev, () => k.classList.remove('drag')));
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => k.addEventListener(ev, () => k.classList.remove('drag')));
   k.addEventListener('keydown', e => {
-    const big = (max - min) / 10;
+    const big = Math.max(step, (max - min) / 10);
     if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { set(v + step); e.preventDefault(); }
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { set(v - step); e.preventDefault(); }
     else if (e.key === 'PageUp') { set(v + big); e.preventDefault(); }
@@ -72,7 +76,17 @@ function knob(host, o) {
 
 function picker(host, items, cur, onPick) {
   host.innerHTML = '';
-  items.forEach(([v, html]) => { const b = H('button', { html, type: 'button' }, host); if (v === cur) b.classList.add('on'); b.onclick = () => { $$('button', host).forEach(x => x.classList.remove('on')); b.classList.add('on'); onPick(v); }; });
+  items.forEach(([v, html]) => {
+    const button = H('button', { html, type: 'button', 'aria-pressed': v === cur }, host);
+    button.classList.toggle('on', v === cur);
+    button.onclick = () => {
+      $$('button', host).forEach(other => {
+        other.classList.toggle('on', other === button);
+        other.setAttribute('aria-pressed', other === button);
+      });
+      onPick(v);
+    };
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -134,19 +148,32 @@ const letters = s => [...s.toLowerCase()].filter(c => c >= 'a' && c <= 'z');
       faces.forEach(f => f.style.clipPath = clip);
     });
   }
-  const k = knob($('#hero-knob'), { min: 0, max: 1, step: 0.001, value: 0, color: '--x-ink-2', aria: 'Lens position', onInput: v => place(v) });
-  let dragging = false;
+  const controls = $('#hero-knob');
+  const k = knob(controls, { min: 0, max: 1, step: 0.01, value: 0, color: '--x-ink-2', aria: 'Lens position', onInput: v => place(v) });
+  let dragging = false, interacted = false;
+  controls.addEventListener('focusin', () => { interacted = true; });
   const toP = e => { const r = row.getBoundingClientRect(), lw = lensW(r.width); return (e.clientX - r.left - lw / 2) / (r.width - lw); };
-  grab.addEventListener('pointerdown', e => { dragging = true; grab.setPointerCapture(e.pointerId); k.set(toP(e)); });
+  grab.addEventListener('pointerdown', e => {
+    interacted = true;
+    dragging = true;
+    grab.setPointerCapture(e.pointerId);
+    k.set(toP(e));
+  });
   grab.addEventListener('pointermove', e => { if (dragging) k.set(toP(e)); });
-  grab.addEventListener('pointerup', () => dragging = false);
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(event => grab.addEventListener(event, () => { dragging = false; }));
   addEventListener('resize', () => place(pos));
   const target = () => { const r = row.getBoundingClientRect(), lw = lensW(r.width), c = cards[toks.indexOf('aw')].c.getBoundingClientRect(); return Math.max(0, Math.min(1, (c.left + c.width / 2 - r.left - lw / 2) / (r.width - lw))); };
   const go = () => {
-    place(0); const T = target();
+    if (interacted) return;
+    const T = target();
     if (reduced) { k.set(T); return; }
     const t0 = performance.now(), dur = 1800;
-    (function step(now) { const u = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - u, 3); k.set(T * e); if (u < 1) requestAnimationFrame(step); })(t0);
+    (function step(now) {
+      if (interacted) return;
+      const u = Math.min(1, (now - t0) / dur);
+      k.set(T * (1 - Math.pow(1 - u, 3)));
+      if (u < 1) requestAnimationFrame(step);
+    })(t0);
   };
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => requestAnimationFrame(go));
 })();
@@ -402,7 +429,7 @@ function arrow(svg, d, id, kind = 'k', o = {}) { return S('path', { d, fill: 'no
 (function scan() {
   const host = $('#scan'); if (!host) return;
   const WORDS = { strawberry: 'r', balloon: 'l', bookkeeper: 'e', mississippi: 's' };
-  let word = 'strawberry', c = 8, kb = null;
+  let word = 'strawberry', c = word.length;
   function state(tokens, upto) {
     let off = 0, hist = Array(26).fill(0), grid = Array(16).fill(0), dbl = 0, prevLast = '', len = 0, done = 0;
     for (const t of tokens) {
@@ -417,8 +444,8 @@ function arrow(svg, d, id, kind = 'k', o = {}) { return S('path', { d, fill: 'no
   }
   function diff(a, b) { let d = 0; a.hist.forEach((v, i) => d = Math.max(d, Math.abs(v - b.hist[i]))); a.grid.forEach((v, i) => { if (v !== b.grid[i]) d = Math.max(d, 1); }); d = Math.max(d, Math.abs(a.dbl - b.dbl), Math.abs(a.len - b.len)); return d; }
   function rowEl(parent, title, tokens, st, q) {
-    const box = H('div', {}, parent);
-    H('div', { class: 'sr-h', html: `<span>${esc(title)}</span><span>${tokens.length} tokens</span>` }, box);
+    const box = H('div', { class: 'scan-state' }, parent);
+    H('div', { class: 'sr-h', html: `<span>${esc(title)}</span><span>${st.done}/${tokens.length} tokens read</span>` }, box);
     const tr = H('div', { class: 'sr-toks' }, box); let off = 0;
     tokens.forEach((t, i) => {
       const end = off + t.length, cls = end <= c ? 'done' : (off < c ? 'part' : '');
@@ -427,8 +454,9 @@ function arrow(svg, d, id, kind = 'k', o = {}) { return S('path', { d, fill: 'no
       off = end;
     });
     const hr = H('div', { class: 'st-row' }, box); H('div', { class: 'st-l', text: 'histogram' }, hr);
-    const hh = H('div', { class: 'st-hist' }, hr); const mx = 3;
-    st.hist.forEach((v, i) => { const ch = String.fromCharCode(97 + i); const d = H('div', { class: ch === q ? 'q' : '' }, hh); const b = H('i', {}, d); b.style.height = Math.min(100, v / mx * 100) + '%'; H('span', { text: ch }, d); });
+    const hh = H('div', { class: 'st-hist' }, hr);
+    const mx = Math.max(...retinaVec(word).F.subarray(0, 26));
+    st.hist.forEach((v, i) => { const ch = String.fromCharCode(97 + i); const d = H('div', { class: ch === q ? 'q' : '' }, hh); const b = H('i', {}, d); b.style.height = (v / mx * 100) + '%'; d.title = `${ch}: ${v}`; H('span', { text: ch }, d); });
     const gr = H('div', { class: 'st-row' }, box); H('div', { class: 'st-l', text: 'char grid' }, gr);
     const gg = H('div', { class: 'st-grid' }, gr); st.grid.forEach(v => H('span', { class: v ? '' : 'e', text: v ? String.fromCharCode(96 + v) : '.' }, gg));
     const sr = H('div', { class: 'st-row' }, box); H('div', { class: 'st-l', text: 'scalars' }, sr);
@@ -442,10 +470,26 @@ function arrow(svg, d, id, kind = 'k', o = {}) { return S('path', { d, fill: 'no
     const rows = H('div', { class: 'scan-rows' }, host);
     rowEl(rows, "Qwen3's tokenization", ca, s1, q); rowEl(rows, 'Alternative valid split', aa, s2, q);
     const d = diff(s1, s2);
-    H('div', { class: 'scan-diff', html: `max |Δ state| = <b class="${d === 0 ? 'eq0' : ''}">${d}</b>` + (d === 0 ? (c >= word.length ? '  ·  identical for any tokenization' : '  ·  both have consumed the same characters') : '  ·  one tokenization is mid-token') }, host);
+    const comparison = d === 0
+      ? (c === word.length ? 'Same final state' : 'Same prefix processed')
+      : 'Different prefixes processed';
+    H('div', { class: 'scan-diff', html: `<strong>${comparison}</strong> <span>max |Δ state| = ${d}</span>` }, host);
   }
-  picker($('#scan-pick'), Object.keys(WORDS).map(w => [w, w]), word, w => { word = w; c = Math.min(c, w.length); rebuildKnob(); });
-  function rebuildKnob() { const kh = $('#scan-knob'); kh.innerHTML = ''; kb = knob(kh, { min: 0, max: word.length, step: 1, value: Math.min(c, word.length), color: '--x-retina', aria: 'Characters read', label: v => `${v} of ${word.length} characters read`, onInput: v => { c = v; draw(); } }); }
+  picker($('#scan-pick'), Object.keys(WORDS).map(w => [w, w]), word, w => {
+    c = c === word.length ? w.length : Math.min(c, w.length);
+    word = w;
+    rebuildKnob();
+  });
+  function rebuildKnob() {
+    const controls = $('#scan-knob');
+    controls.innerHTML = '';
+    knob(controls, {
+      min: 0, max: word.length, value: c, color: '--x-retina',
+      aria: 'Scanner position',
+      label: v => `Scan position: ${v} of ${word.length} characters`,
+      onInput: v => { c = v; draw(); },
+    });
+  }
   rebuildKnob();
 })();
 
@@ -454,30 +498,64 @@ function arrow(svg, d, id, kind = 'k', o = {}) { return S('path', { d, fill: 'no
 (function illusion() {
   const host = $('#ill'); if (!host) return;
   const P = {
-    v2_frozen: { name: 'BPE-V2 (frozen host)', fid: 88, p: { '-2': '1', '-1': '2', '0': '3', '1': '3', '2': '3', '3': '3' } },
-    v2_lora: { name: 'BPE-V2 + LoRA', fid: 94, p: { '-2': '1', '-1': '2', '0': '3', '1': '2', '2': '2', '3': '2' } },
-    v1_frozen: { name: 'Generic V1 (frozen)', fid: 16, p: { '-2': '3', '-1': '3', '0': '3', '1': '3', '2': '3', '3': '3' } },
-    l0_lora: { name: 'Layer-0 + LoRA', fid: 10, p: { '-2': '3', '-1': '3', '0': '3', '1': '3', '2': '3', '3': '3' } },
+    v2_frozen: { name: 'BPE-V2 (frozen host)', p: { '-2': '1', '-1': '2', '0': '3', '1': '3', '2': '3', '3': '3' } },
+    v2_lora: { name: 'BPE-V2 + LoRA', p: { '-2': '1', '-1': '2', '0': '3', '1': '2', '2': '2', '3': '2' } },
+    v1_frozen: { name: 'Generic V1 (frozen)', p: { '-2': '3', '-1': '3', '0': '3', '1': '3', '2': '3', '3': '3' } },
+    l0_lora: { name: 'Layer-0 + LoRA', p: { '-2': '3', '-1': '3', '0': '3', '1': '3', '2': '3', '3': '3' } },
   };
   let arch = 'v2_frozen', d = -1;
-  picker($('#ill-pick'), Object.entries(P).map(([k, v]) => [k, v.name]), arch, a => { arch = a; draw(); });
+  const edits = [-2, -1, 0, 1, 2, 3];
+  const signed = value => value > 0 ? '+' + value : String(value);
   const toks = TOK.hero[0].slice(0, 19);
+  host.innerHTML = `<div class="ill">
+    <div class="ill-input">
+      <h5>Input tokens · fixed</h5>
+      <div class="ill-prompt">${toks.map((t, i) => `<span class="${i === 14 ? 'pert' : ''}">${showTok(t)}</span>`).join(' ')}</div>
+    </div>
+    <div class="ill-features">
+      <h5>Count of ‘r’ supplied to the retina</h5>
+      <div class="ill-ret"></div>
+    </div>
+    <div class="ill-out" role="status"></div>
+    <div class="ill-sweep" role="group" aria-label="Recorded answers for each feature edit"></div>
+    <div class="ill-note"></div>
+  </div>`;
+  const features = $('.ill-ret', host);
+  const output = $('.ill-out', host);
+  const note = $('.ill-note', host);
+  const sweep = $('.ill-sweep', host);
+  const buttons = edits.map(value => {
+    const button = H('button', { type: 'button' }, sweep);
+    button.addEventListener('click', () => kb.set(value));
+    return button;
+  });
+
   function draw() {
-    const c = P[arch], pred = c.p[d], tgt = String(3 + d), ok = pred === tgt;
-    let r = [1, 0, 2], rem = -d; if (d >= 0) r[2] += d; else for (let i = 2; i >= 0 && rem > 0; i--) { const t = Math.min(r[i], rem); r[i] -= t; rem -= t; }
-    const orig = [1, 0, 2];
-    host.innerHTML = `<div class="ill">
-      <div class="ill-col"><h5>Input tokens · fixed</h5><div class="ill-prompt">${toks.map((t, i) => `<span class="${i === 14 ? 'pert' : ''}">${showTok(t)}</span>`).join(' ')}</div></div>
-      <div class="arr" aria-hidden="true">→</div>
-      <div class="ill-col"><h5>F_retina['r'] per token</h5><div class="ill-ret">${['str', 'aw', 'berry'].map((t, i) => `<div class="c"><div class="b ${orig[i] !== r[i] ? 'ed' : ''}"><i style="height:${r[i] / 5 * 100}%"></i><em>${r[i]}</em></div>${t}</div>`).join('')}<div class="c"><div class="b ${d ? 'ed' : ''}"><i style="height:${(3 + d) / 6 * 100}%"></i><em>${3 + d}</em></div>word</div></div></div>
-      <div class="arr" aria-hidden="true">→</div>
-      <div class="ill-col ill-out"><h5>Next-token prediction</h5><div class="ill-pred ${ok ? 'y' : 'n'}">${pred}</div>
-        <div class="ill-st">illusion target ${tgt} · true count 3<br>${ok ? '<span class="c-retina">follows the retina</span>' : 'ignores the edit'}</div>
-        <div class="ill-sweep">${[-2, -1, 0, 1, 2, 3].map(v => `<div data-d="${v}" class="${c.p[v] === String(3 + v) ? 'hit' : ''} ${v === d ? 'cur' : ''}">δ ${v > 0 ? '+' : ''}${v}<b>${c.p[v]}</b></div>`).join('')}</div></div>
-    </div><div class="ill-note">${esc(c.name)} · systematic fidelity <b>${c.fid}%</b> (25 words, n = 50)</div>`;
-    $$('.ill-sweep div', host).forEach(el => el.onclick = () => kb.set(+el.dataset.d));
+    const model = P[arch];
+    const prediction = model.p[d];
+    const target = 3 + d;
+    const match = prediction === String(target);
+    const counts = [['str', 1], ['aw', 0], ['berry', 2 + d]];
+    features.innerHTML = counts.map(([token, count]) =>
+      `<div class="ill-count ${token === 'berry' && d !== 0 ? 'ed' : ''}"><code>${token}</code><b>${count}</b></div>`
+    ).join('') + `<div class="ill-count sum"><span>Total</span><b>${target}</b></div>`;
+    const message = d === 0 ? 'No feature edit' : match ? 'Matches the edited count' : 'Differs from the edited count';
+    output.innerHTML = `<h5>Model answer</h5><div class="ill-pred ${match ? 'y' : 'n'}">${prediction}</div>
+      <div class="ill-st">True count <b>3</b> · Edited count <b>${target}</b><br>${message}</div>`;
+    buttons.forEach((button, i) => {
+      const value = edits[i], answer = model.p[value];
+      button.innerHTML = `<span>δ ${signed(value)}</span><b>${answer}</b>`;
+      button.setAttribute('aria-label', `Edit ${signed(value)}, model answer ${answer}`);
+      button.setAttribute('aria-pressed', value === d);
+    });
+    note.textContent = `Systematic edit fidelity: ${R.fid[arch]}% across 50 trials on 25 words`;
   }
-  const kb = knob($('#ill-knob'), { min: -2, max: 3, step: 1, value: d, color: '--x-amber', aria: 'delta', ticks: [-2, -1, 0, 1, 2, 3].map(v => ({ v, label: (v > 0 ? '+' : '') + v })), onInput: v => { d = v; draw(); } });
+  picker($('#ill-pick'), Object.entries(P).map(([key, model]) => [key, model.name]), arch, a => { arch = a; draw(); });
+  const kb = knob($('#ill-knob'), {
+    min: edits[0], max: edits.at(-1), value: d, color: '--x-amber',
+    aria: 'Edit the letter count for berry', label: v => `Edit to berry: ${signed(v)}`,
+    onInput: v => { d = v; draw(); },
+  });
 })();
 
 /* ================================================================== */
@@ -559,7 +637,7 @@ function bars(el, o) {
     const g = S('g', { class: 'row', tabindex: 0, 'aria-label': `${r.name}: ${r.v}%` }, svg);
     S('rect', { x: 0, y: yc - rh / 2, width: W, height: rh, class: 'hl', style: 'fill:transparent', rx: 3 }, g);
     const t = S('text', { x: m.l - 12, y: yc + 4, 'text-anchor': 'end', class: 'tl', 'font-size': small ? 11.5 : 12.5 }, g); t.textContent = small ? r.short : r.name;
-    S('rect', { x: X(0), y: yc - 9, width: pw, height: 18, rx: 9, style: 'fill:var(--x-frozen);opacity:.55' }, g); S('rect', { x: X(0), y: yc - 9, width: Math.max(18, w), height: 18, rx: 9, style: `fill:var(${r.c})` }, g);
+    S('rect', { x: X(0), y: yc - 9, width: pw, height: 18, rx: 9, style: 'fill:var(--x-frozen);opacity:.55' }, g); S('rect', { x: X(0), y: yc - 9, width: w, height: 18, rx: 9, style: `fill:var(${r.c})` }, g);
     const v = S('text', { x: X(0) + w + 8, y: yc + 4, class: 'vl' }, g); v.textContent = Math.round(r.v) + '%';
     const on = e => showTip(e, r.name, [['edits followed', pct(r.v), cssv(r.c)]]);
     g.addEventListener('pointermove', on); g.addEventListener('pointerleave', hideTip); g.addEventListener('focus', on); g.addEventListener('blur', hideTip);

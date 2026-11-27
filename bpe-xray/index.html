@@ -7,11 +7,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>BPE X-Ray Vision | Samarth P</title>
 <meta name="author" content="Samarth P">
-<meta name="description" content="Compiling character perception out of tokenizer.json and into a frozen language model: an exact zero-training ALU and a BPE-invariant Word Retina.">
+<meta name="description" content="A tokenizer knows how its tokens are spelled. BPE X-Ray compiles that information into a lookup a frozen model can use during its forward pass.">
 <meta property="og:site_name" content="Samarth P">
 <meta property="og:type" content="article">
 <meta property="og:title" content="BPE X-Ray Vision">
-<meta property="og:description" content="Compiling character perception out of tokenizer.json and into a frozen language model.">
+<meta property="og:description" content="A tokenizer knows how its tokens are spelled. BPE X-Ray compiles that information into a lookup a frozen model can use during its forward pass.">
 <meta property="og:url" content="https://samarth777.github.io/bpe-xray/">
 <meta property="og:image" content="https://samarth777.github.io/bpe-xray/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -37,13 +37,13 @@
 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/article.css">
+<link rel="stylesheet" href="assets/article.css?v=2">
 </head>
 
 <d-front-matter>
 <script type="text/json">{
   "title": "BPE X-Ray Vision",
-  "description": "Compiling character perception out of tokenizer.json and into a frozen language model",
+  "description": "A tokenizer knows how its tokens are spelled. BPE X-Ray compiles that information into a lookup a frozen model can use during its forward pass.",
   "published": "November 25, 2026",
   "authors": [{"author": "Samarth P", "authorURL": "https://samarth777.github.io/", "affiliations": []}]
 }</script>
@@ -77,12 +77,12 @@
 
 <d-title>
   <h1>BPE X-Ray Vision</h1>
-  <p>Compiling character perception out of <code>tokenizer.json</code> and into a frozen language model</p>
+  <p>Compiling token spellings into weight space for character-level tasks in frozen models</p>
   <figure class="hero" id="hero">
     <div class="hero-stage" id="hero-stage" aria-label="Token lens: drag to reveal the characters behind each token ID"></div>
     <div class="knob-wrap" id="hero-knob"></div>
     <figcaption>
-      A frozen language model receives this prompt as <span class="c-id">token IDs</span>. The tokenizer already records the <span class="c-letter">characters</span> behind every ID, along with the letter-count row <code>E_hist</code> we compile from it (drawn under each token). Drag the lens, or the slider. The tokenization is Qwen3-0.6B's; no model is run.
+      Drag the lens to see the <span class="c-letter">text</span> behind Qwen3’s <span class="c-id">token IDs</span>. The bars under each token show its letter counts. In <code>str | aw | berry</code>, the highlighted bars add up to three <em>r</em>’s. The demo uses Qwen3’s recorded tokenization.
     </figcaption>
   </figure>
 </d-title>
@@ -92,20 +92,23 @@
 <d-article>
 
 <p>
-  Ask a capable language model how many r's are in <em>strawberry</em> and it will often guess. The usual diagnosis is a reasoning failure, and the usual fixes are reasoning workarounds: spell the word out with chain-of-thought<d-cite key="wei2022cot"></d-cite>, or hand it to a code tool<d-cite key="schick2023toolformer"></d-cite>.
+  How many <em>r</em>’s are in <em>strawberry</em>? Qwen3’s tokenizer splits the quoted word into <code>str | aw | berry</code>. The model receives three IDs and looks up learned vectors. To count letters, it has to recover the spelling from those vectors. The tokenizer already has the exact text.
 </p>
 <p>
-  We think it is better described as a perception failure. Byte-pair encoding<d-cite key="sennrich2016bpe"></d-cite> delivers <em>strawberry</em> to Qwen3 as three integers, <code>[495, 672, 15357]</code>. Whatever the model knows about their spelling, it has to have memorised in its weights<d-cite key="kaushal2022tokens,edman2024cute"></d-cite>. Yet that information is neither hidden nor learned. It is a fixed table that ships with every model: <code>tokenizer.json</code>.
+  <strong>BPE X-Ray puts that spelling lookup inside the model.</strong> I compile the tokenizer’s vocabulary into fixed tables indexed by token ID. Looking up the three tokens gives <strong>1 + 0 + 2 = 3</strong> occurrences of <em>r</em>. That’s the <strong>weight-space intervention</strong>. The lookup runs in the forward pass while the pretrained weights stay frozen.
 </p>
 <p>
-  This article compiles that table into frozen tensors and builds two weight-space modules on it, in the spirit of Weight-Space Micromachines<d-cite key="papailiopoulos2026wsm"></d-cite>. The first is an <span class="c-alu">exact ALU</span>: it needs no training and is bit-for-bit silent until called. The second is a <span class="c-retina">Word Retina</span>: a BPE-invariant word-level sensory stream that a 100% frozen model learns to read. We also show two plausible designs that fail, and causal tests showing the model really reads its retina.
+  The <span class="c-alu">X-Ray ALU</span> computes and writes the answer when it sees an <code>[XRAY …]</code> tag, with no training. The <span class="c-retina">Word Retina</span> uses trained adapters to feed spelling features into hidden layers, so the model can answer a plain-language question about a quoted word.
+</p>
+<p>
+  With the input IDs fixed, lowering <code>berry</code>’s <em>r</em> count by one changes the model’s answer from <strong>3</strong> to <strong>2</strong>. <a href="#fig-illusion">Try it in the demo.</a>
 </p>
 
 <div class="results l-page">
-  <div><span class="rn">25 → 100%</span><span class="rl">held-out accuracy with the <span class="c-alu">ALU</span> on Qwen3-0.6B, zero training</span></div>
-  <div><span class="rn">97.1%</span><span class="rl">perceptual accuracy with the <span class="c-retina">Word Retina</span> on a frozen host, vs. 71.7% for <span class="c-lora">LoRA</span></span></div>
-  <div><span class="rn">88%</span><span class="rl">of retina edits steer the answer on identical input tokens (layer-0 design: 10%)</span></div>
-  <div><span class="rn">+0.31</span><span class="rl">change in prose perplexity on the frozen host (LoRA: +5.08)</span></div>
+  <div><span class="rn">25 → 100%</span><span class="rl">two-shot accuracy across six held-out tasks with the <span class="c-alu">ALU</span> on Qwen3-0.6B</span></div>
+  <div><span class="rn">97.1%</span><span class="rl">on four held-out letter tasks with the <span class="c-retina">Word Retina</span>, vs. 71.7% for <span class="c-lora">LoRA</span></span></div>
+  <div><span class="rn">88%</span><span class="rl">of feature edits followed with input tokens fixed (44 of 50 trials)</span></div>
+  <div><span class="rn">96.9%</span><span class="rl">on letter tasks with compound pseudowords, vs. 64.4% for <span class="c-lora">LoRA</span></span></div>
 </div>
 
 <hr>
@@ -113,16 +116,19 @@
 <h2 id="token-blindness">Token Blindness</h2>
 
 <p>
-  To measure the problem we built a strictly word-disjoint benchmark (<code>src/benchmarks.py</code>): 418 training words and 162 held-out English words, over seven tasks. <em>Count</em>, <em>length</em>, <em>nth</em> and <em>double</em> are answered by looking at a word once; we call them <strong>perceptual</strong>. <em>Delete</em>, <em>replace</em> and <em>reverse</em> require writing out a modified string. Four stress sets go further, each designed to defeat a different shortcut.
+  Byte-pair encoding<d-cite key="sennrich2016bpe"></d-cite> groups text into tokens that can contain several letters. The model receives token IDs and looks up their embeddings. Earlier work measured how much spelling information models recover from those learned representations<d-cite key="kaushal2022tokens,edman2024cute"></d-cite>. I test what changes when the forward pass has an explicit lookup for the letters.
+</p>
+<p>
+  I built the benchmark from 418 training words and 162 held-out English words, with no overlap between the sets. The four <strong>perceptual tasks</strong> ask the model to count letters, measure word length, find the nth letter, or detect an adjacent double. The other three ask it to delete a letter, replace a letter, or reverse the word. I also test unfamiliar strings, alternate token splits, and tasks held out from training.
 </p>
 
 <figure class="l-page" id="fig-bench">
   <div class="bench" id="bench"></div>
-  <figcaption><strong>Figure 1.</strong> Evaluation splits, shown with their real Qwen3 tokenizations. Pseudowords cannot have memorised spellings. In cross-token doubles, the only repeated letter straddles a token boundary. Multi-word count and anagram detection are never seen in training.</figcaption>
+  <figcaption><strong>Figure 1.</strong> Evaluation splits, shown with their real Qwen3 tokenizations. Generated pseudowords reduce reliance on familiar spellings. In cross-token doubles, the only repeated letter straddles a token boundary. Multi-word count and anagram detection are never seen in training.</figcaption>
 </figure>
 
 <p>
-  Frozen <code>Qwen3-0.6B-Base</code><d-cite key="qwen2025qwen3"></d-cite> scores 19.1% zero-shot over the seven tasks and 25.0% 2-shot over six, including 0% on <code>reverse</code> and <code>rot13</code>. Scale helps a little: Qwen3-1.7B reaches 34.7%.
+  Frozen <code>Qwen3-0.6B-Base</code><d-cite key="qwen2025qwen3"></d-cite> scores 19.1% zero-shot over the seven tasks and 25.0% 2-shot over six, including 0% on <code>reverse</code> and <code>rot13</code>. On the same six-task, two-shot evaluation, Qwen3-1.7B reaches 34.7%.
 </p>
 
 <hr>
@@ -130,15 +136,15 @@
 <h2 id="compiling">Compiling the Tokenizer</h2>
 
 <p>
-  A tokenizer is a finite map from token ID to string. We read it once, offline, and compile a frozen <code>CharWeightBank</code> (<code>src/char_tables.py</code>) of three tables indexed by token ID:
+  A tokenizer is a finite map from token ID to string. I read it once, offline, and compile a frozen <code>CharWeightBank</code> (<code>src/char_tables.py</code>) of three tables indexed by token ID:
 </p>
 <ul>
   <li><code>E_hist [V, 26]</code> holds case-insensitive letter counts (7.9&nbsp;MB in bf16 for Qwen's 151,936 tokens).</li>
-  <li><code>E_alpha_chars [V, 16]</code> holds the token's letters in order, with its length in <code>E_alpha_len</code>.</li>
+  <li><code>E_alpha_chars [V, L_max]</code> stores ordered letter codes up to the table’s character limit. <code>E_alpha_len</code> stores the alphabetic length.</li>
   <li><code>F_retina [V, 358]</code> holds a richer per-token sensory vector, laid out in the figure below.</li>
 </ul>
 <p>
-  After compilation the tokenizer is never called again. A token's character anatomy is just an embedding lookup inside the forward pass, <code>F_retina[input_ids]</code>.<d-footnote>Compilation takes 5.2 s for SmolLM2-1.7B and 12–29 s for the Qwen3 models.</d-footnote>
+  The tokenizer still converts the prompt into token IDs. Once those IDs enter the forward pass, the modules read their character features by indexing frozen tensors, for example <code>F_retina[input_ids]</code>.<d-footnote>Compilation takes 5.2 s for SmolLM2-1.7B and 12–29 s for the Qwen3 models.</d-footnote>
 </p>
 
 <figure class="l-page" id="fig-anatomy">
@@ -150,7 +156,7 @@
 </figure>
 
 <p>
-  These tables answer questions about a single token exactly. They say nothing yet about a <em>word</em>, which may be split into tokens in many different ways. The two modules below differ in how they bridge that gap.
+  Each row describes one token. A word may span several rows. The ALU combines them after recognising a tagged call. The retina combines them as it scans a quoted span.
 </p>
 
 <hr>
@@ -158,12 +164,12 @@
 <h2 id="alu">An Exact ALU</h2>
 
 <p>
-  The first module (<code>src/xray_alu.py</code>) is a hand-compiled tensor circuit hooked onto the host's final RMSNorm. It follows the read → compute → write recipe of Weight-Space Micromachines under one strict contract. <em>If no <code>[XRAY …]=</code> span is open, the hook returns the hidden state untouched.</em> Logits on ordinary text, and at every step before the trigger closes, are therefore bit-identical to the base model's.
+  The ALU is a tensor circuit attached to the host’s final RMSNorm. It follows the read, compute, and write recipe from <em>Weight-Space Micromachines</em><d-cite key="papailiopoulos2026wsm"></d-cite>. The closing <code>]=</code> activates the circuit. Until then, the hook returns the hidden state untouched. In my checks, logits on ordinary prose and before the trigger were bit-identical to the base model’s.
 </p>
 <ul>
   <li><strong>Read.</strong> Vocabulary indicator vectors and lower-triangular prefix sums locate <code>[XRAY</code>, the operation, an optional argument, <code>|</code>, and <code>]=</code>.</li>
   <li><strong>Compute.</strong> <code>count</code> and <code>len</code> sum <code>E_hist</code> or <code>E_alpha_len</code> over the span. <code>nth</code>, <code>spell</code>, <code>reverse</code> and <code>rot13</code> use cumulative lengths and ReLU indicator gates to select a token and a slot inside it. ROT13 is a fixed 26 × 26 permutation.</li>
-  <li><strong>Write.</strong> For each output token <var>t</var>, we solve a post-norm direction <code>W_write[t]</code> against <code>lm_head</code>. Adding <code>γ·W_write[t]</code> then makes <var>t</var> the argmax.</li>
+  <li><strong>Write.</strong> For each output token <var>t</var>, I solve a post-norm direction <code>W_write[t]</code> against <code>lm_head</code>. Adding <code>γ·W_write[t]</code> then makes <var>t</var> the argmax.</li>
 </ul>
 
 <figure class="l-page" id="fig-alu-diagram">
@@ -202,7 +208,7 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 
 <h3>Results across model families</h3>
 <p>
-  We ran the same compiler, unchanged, on three models from two families with different tokenizers. Each was evaluated 2-shot, with in-context examples teaching only the tag format and no gradient steps. We also checked each circuit directly on all 13 suites.
+  I ran the same compiler, unchanged, on three models from two families with different tokenizers. Each was evaluated 2-shot, with in-context examples teaching only the tag format and no gradient steps. I also checked each circuit directly on all 13 suites.
 </p>
 
 <figure class="l-page" id="fig-alu">
@@ -234,7 +240,7 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 <h2 id="retina">The Word Retina</h2>
 
 <p>
-  The ALU is exact, but it is a coprocessor you must call by name. The harder question is whether a <strong>100% frozen</strong> host can answer <code>How many times does the letter 'r' appear in 'strawberry'?\nAnswer:</code> with its very next token, with no tag and no chain-of-thought.
+  The Word Retina uses the same tables to answer natural-language questions about quoted words. For <code>How many times does the letter 'r' appear in 'strawberry'?</code>, the scanner computes the count and trained adapters feed features into the model’s hidden layers. I test whether the frozen host can use them to produce the answer as its next token, without a special tag or a written chain of thought.
 </p>
 <p>
   Every design below was trained on <code>Qwen3-0.6B-Base</code> with 4,096 word-disjoint examples over the seven tasks. All are compared against a plain <span class="c-lora">LoRA</span><d-cite key="hu2022lora"></d-cite> (r = 18, 11.35M parameters).
@@ -244,22 +250,22 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 
 <figure class="l-page" id="fig-arch">
   <div class="arch3" id="arch3"></div>
-  <figcaption><strong>Figure 7.</strong> Three ways to give the host access to <code>F_retina</code>. Below each: perceptual accuracy, the drop when the retina is ablated at test time, and illusion fidelity (defined below). The first two let the host route around the features. Only the third is actually read.</figcaption>
+  <figcaption><strong>Figure 7.</strong> Three ways to give the host access to <code>F_retina</code>. Each panel reports perceptual accuracy, the accuracy drop when the feature path is turned off, and the fraction of count edits the model follows. The Word Retina shows the strongest dependence on the compiled features.</figcaption>
 </figure>
 
 <p>
-  <strong>Layer-0 injection</strong> (<code>src/xray_retina.py</code>) projects <code>F_retina[ids]</code> into the input embeddings alongside a LoRA (10.81M parameters). It scores 47.9% on held-out words and 58.1% on pseudowords, slightly <em>below</em> plain LoRA (49.5 / 60.7). Ablating the retina costs just 2.4 points. At layer 0 the token <em>berry</em> has no access to the question, and LoRA finds memorising spellings easier than carrying a foreign signal through 28 frozen layers.
+  <strong>Layer-0 injection</strong> (<code>src/xray_retina.py</code>) projects <code>F_retina[ids]</code> into the input embeddings alongside a LoRA (10.81M parameters). It scores 47.9% on held-out words and 58.1% on pseudowords, slightly <em>below</em> plain LoRA (49.5 / 60.7). Ablating the retina costs just 2.4 points. At layer 0, the token embedding for <em>berry</em> is still independent of the question. The small ablation drop suggests that the trained model relied little on this feature path.
 </p>
 <p>
   <strong>Generic cross-attention</strong> at layers 14, 20 and 24 (V1, <code>src/visual_cortex.py</code>) attaches where the residual stream already encodes the query. The host now depends on it (−17.1 points when ablated), but accuracy stalls at 35.0%. A generic attention module has to learn subword-to-word aggregation from 4,096 examples.
 </p>
 <p>
-  One number pointed to the fix. On cross-token doubles, V1 with LoRA jumped to 78.8% and lost 30 points when ablated. That was the only feature we had already precomputed across token boundaries. The host does use compiled features, but only once they are invariant to the split. So the design principle is to <strong>compile everything that is algebraically invariant, and learn only the interface.</strong>
+  Cross-token doubles offered a clue. In a V1 variant with LoRA, accuracy on that test reached 78.8% and fell by 30 points when I turned off the feature path. I had already precomputed the double-letter signal across token boundaries. That led me to compute the rest of the word-level features explicitly and train the adapters to use those features.
 </p>
 
 <h3>A compiled word-level recurrence</h3>
 <p>
-  <code>WordRetinaScanner</code> (<code>src/word_retina.py</code>) is a causal, gated linear recurrence over <code>F_retina[ids]</code> and <code>E_alpha_chars[ids]</code>. Inside a quoted span it accumulates the word's letter histogram and length. It detects doubles across token boundaries with one product, <code>prev_last · first</code>, and places each letter into a 16 × 26 grid at its cumulative offset. It also forms query readouts such as <code>matched_cnt</code>, <code>matched_nth</code> and <code>is_anagram</code>, for 623 dimensions in all.<d-footnote>The 623 dimensions are: word histogram (26), length one-hot 0–24 (25) and scalar (1), double flag (1), matched-count one-hot 0–20 (21) and scalar (1), nth letter (26), anagram features (2), first/last letter (52), query letters (52), and the 16 × 26 character grid (416).</d-footnote> Every accumulator is a sum of per-token table rows, so the state at the end of a word is identical for <em>any</em> tokenization of it.
+  <code>WordRetinaScanner</code> (<code>src/word_retina.py</code>) is a causal, gated linear recurrence over <code>F_retina[ids]</code> and <code>E_alpha_chars[ids]</code>. Inside a quoted span it accumulates the word's letter histogram and length. It detects doubles across token boundaries with one product, <code>prev_last · first</code>, and places each letter into a 16 × 26 grid at its cumulative offset. It also forms query readouts such as <code>matched_cnt</code>, <code>matched_nth</code> and <code>is_anagram</code>, for 623 dimensions in all.<d-footnote>The 623 dimensions are: word histogram (26), length one-hot 0–24 (25) and scalar (1), double flag (1), matched-count one-hot 0–20 (21) and scalar (1), nth letter (26), anagram features (2), first/last letter (52), query letters (52), and the 16 × 26 character grid (416).</d-footnote> Two supported token splits can update these features at different points in the scan. Once both have processed the full word, the counts, ordered letters within the grid, and double-letter flag agree.
 </p>
 
 <figure class="l-page" id="fig-scan">
@@ -276,7 +282,7 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 </p>
 <p class="eq">h′ = h + α · W<sub>out</sub>( SiLU(W<sub>g2</sub> h̃) ⊙ W<sub>mix</sub>( SiLU(W<sub>g1</sub> h̃) ⊙ W<sub>s</sub> S ) )</p>
 <p>
-  The taps total 6.47M trainable parameters, 57% of the LoRA budget. Each output projection is zero-initialised, so the model is bit-identical at step 0, and a light KL anchor on random prose keeps untouched logits in place.
+  The taps total 6.47M trainable parameters, 57% of the LoRA budget. Each output projection is zero-initialised, so the model is bit-identical at step 0, and a KL term on prose during training discourages changes to the base model’s output distribution.
 </p>
 
 <figure class="l-page" id="fig-eff">
@@ -287,7 +293,7 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 
 <figure class="l-page" id="fig-tasks">
   <div class="chart" id="chart-tasks"></div>
-  <figcaption><strong>Figure 10.</strong> Per-task accuracy at n = 4,096. On perceptual and OOD tasks, the <span class="c-retina">Word Retina</span> on a frozen host reaches 73–100%. Multi-token rewrites (delete, replace, reverse) are out of reach for a single-pass readout, and this is exactly where the <span class="c-alu">ALU</span> is exact.</figcaption>
+  <figcaption><strong>Figure 10.</strong> Per-task accuracy after training on 4,096 examples. The <span class="c-retina">Word Retina</span> is strongest on letter-level questions. Transfer to held-out tasks is mixed (73.3% on multi-word count and 61.7% on anagrams), and rewriting strings remains difficult.</figcaption>
 </figure>
 
 <table class="l-page tbl">
@@ -308,12 +314,12 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 <h2 id="causal">Is the Retina Really Read?</h2>
 
 <p>
-  Accuracy alone doesn't rule out a shortcut. The taps might exploit the host's own hidden states and ignore the compiled features. We ran three interventions.
+  The adapted system scores higher on these tasks. To test what the gain depends on, I turn the feature path off, then edit an individual count while keeping the prompt fixed.
 </p>
 
 <h3>Ablation</h3>
 <p>
-  Setting the retina's scale to zero at test time should, if the gains come from the retina, return the frozen host to roughly base-model behaviour. It does.
+  Setting the retina’s scale to zero removes its contribution at test time. Accuracy across the seven held-out tasks drops from 60.0% to 17.4%, close to the untouched base model’s 19.1%.
 </p>
 
 <figure class="l-body-outset" id="fig-ablate">
@@ -323,7 +329,7 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 
 <h3>Optical illusions</h3>
 <p>
-  A stronger test leaves the input untouched. We hold the token IDs fixed and add an integer <span class="c-amber">δ</span> to a single feature: the <code>'r'</code> count of <code>F_retina</code> for the token <em>berry</em>. If the host is reading its retina, it should look at the unchanged word <em>strawberry</em> and report a count the text contradicts.
+  A stronger test leaves the input untouched. I hold the token IDs fixed and add an integer <span class="c-amber">δ</span> to a single feature: the <code>'r'</code> count of <code>F_retina</code> for the token <em>berry</em>. If the host is reading its retina, it should look at the unchanged word <em>strawberry</em> and report a count the text contradicts.
 </p>
 
 <figure class="l-page" id="fig-illusion">
@@ -336,12 +342,12 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 </figure>
 
 <p>
-  On <em>strawberry</em>, the frozen-host retina follows δ = −2, −1 and 0 exactly, then saturates at 3. Single English words rarely contain more than three copies of a letter, so the learned readout is uncalibrated above that. The systematic suite uses 25 held-out words, a random letter each, and δ ∈ {+1, +2} on the word's last token. There, the edit is followed <strong>88%</strong> of the time (44/50) on the frozen host and <strong>94%</strong> (47/50) with LoRA.
+  On <em>strawberry</em>, the frozen host reports the edited count when δ = −2, −1 and 0. For positive edits, it keeps predicting 3 as the edited count rises. The systematic suite uses 25 held-out words, a random letter each, and δ ∈ {+1, +2} on the word's last token. There, the edit is followed <strong>88%</strong> of the time (44/50) on the frozen host and <strong>94%</strong> (47/50) with LoRA.
 </p>
 
 <figure class="l-body-outset" id="fig-fid">
   <div class="chart" id="chart-fid"></div>
-  <figcaption><strong>Figure 13.</strong> Illusion fidelity: the fraction of 50 feature edits that the model's answer follows. Only BPE-V2 is read causally.</figcaption>
+  <figcaption><strong>Figure 13.</strong> Fraction of the 50 feature edits for which the predicted answer matched the edited count. The two BPE-V2 variants follow the edits most often.</figcaption>
 </figure>
 
 <h3>Compression and re-tokenization</h3>
@@ -349,7 +355,7 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
   <strong>Compound pseudowords</strong> glue random 4–7 character BPE chunks into 9–13 character strings of at most three tokens, the worst case for memorised spellings. Frozen V2 reaches 96.9% on perceptual tasks (count 100, double 100, length 95, nth 92.5), against 64.4% for LoRA.
 </p>
 <p>
-  <strong>Re-tokenization</strong> splits held-out words into a different valid tokenization of the same bytes. Evaluated on count, length, nth and reverse, V2 is unaffected (70.0 → 73.1 frozen, 73.1 → 75.0 with LoRA). We did not run the ALU on this split.<d-footnote>An earlier version of this post showed the ALU at 100% → 100% here. That value was hard-coded in the plotting script rather than measured, so we have removed it. The ALU's circuit indexes characters rather than tokens, and is 100% on every suite in the direct check.</d-footnote>
+  <strong>Re-tokenization</strong> splits held-out words into a different valid tokenization of the same bytes. Evaluated on count, length, nth and reverse, V2 does not lose aggregate accuracy under the tested re-splits (70.0 → 73.1 on the frozen host, 73.1 → 75.0 with LoRA). I did not run the ALU on this split.<d-footnote>An earlier version of this post showed the ALU at 100% → 100% here. That value was hard-coded in the plotting script rather than measured, so I removed it. The ALU's circuit indexes characters rather than tokens, and is 100% on every suite in the direct check.</d-footnote>
 </p>
 
 <figure class="l-page" id="fig-stress">
@@ -361,13 +367,13 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 <!-- ================================================================== -->
 <h2 id="limitations">Limitations</h2>
 
-<p><strong>String surgery.</strong> V2 gives near-perfect single-pass perception, but autoregressive edits stay weak on a frozen host: delete 23%, replace 7%, reverse 2%. Composing the retina with the ALU is the obvious next step.</p>
-<p><strong>Readout saturation.</strong> The learned tap saturates above the letter counts typical of single words (about three). High-count synthetic strings, or a continuous scalar channel, should lift the ceiling.</p>
+<p><strong>String rewriting.</strong> On the frozen host, V2 scores 23% on deletion, 7% on replacement, and 2% on reversal. The strong results on short answers do not extend to generating edited words.</p>
+<p><strong>Readout saturation.</strong> In the <em>strawberry</em> intervention, the readout stops tracking the feature above three. The experiment leaves open how well the adapter handles larger counts in other words.</p>
 <p><strong>Span latching.</strong> The scanner relies on quote tokens to find its target span. Unquoted prose would need learned boundary gates or a rolling word register.</p>
 <p><strong>Scale.</strong> The ALU is verified on three models in two families. V2 was trained only on Qwen3-0.6B, with a single seed. Larger hosts, more seeds, and RL co-training as in WSM are untested.</p>
 
 <p>
-  The broader lesson is a division of labour. Don't ask gradient descent to memorise structure that already ships with the model. Compile it into weight space once, and spend the trainable parameters on the interface.
+  The tokenizer supplies the spellings. The circuit and scanner compute the relevant character features. With the retina, training teaches the adapters how to pass those features to a frozen model so it can use them in an answer.
 </p>
 
 </d-article>
@@ -487,8 +493,6 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 
 </div>
 
-<footer class="fixed-bottom" role="contentinfo"><div class="container mt-0"></div></footer>
-
 <div id="tip" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
@@ -504,6 +508,6 @@ d_ones     = rem - <span class="m">10</span> * d_tens</code></pre>
 <script src="/assets/js/shortcut-key.js"></script>
 
 <script src="assets/data.js"></script>
-<script src="assets/article.js"></script>
+<script src="assets/article.js?v=2"></script>
 </body>
 </html>
