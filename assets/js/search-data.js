@@ -37,15 +37,15 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/cv/";
           },
-        },{id: "post-",
+        },{id: "post-bpe-x-ray-vision",
         
-          title: "",
+          title: "BPE X-Ray Vision",
         
-        description: "",
+        description: "BPE X-Ray Vision compiles token spellings into weight space so frozen language models can answer questions about individual letters.",
         section: "Posts",
         handler: () => {
           
-            window.location.href = "/blog/2026/2026-11-25-bpe-xray/";
+            window.location.href = "/bpe-xray/";
           
         },
       },{id: "post-posters-i-liked-at-icml-2026",
